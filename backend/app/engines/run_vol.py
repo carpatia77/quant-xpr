@@ -40,6 +40,28 @@ def get_vol_surface(ticker_symbol: str):
             logger.warning("vol_surface_skew_nan", ticker=ticker_symbol, msg="Illiquid OTM options caused NaN skew, falling back to 0.0")
             skew = 0.0
         
+        # Calculate Volatility Term Structure for up to 3 expirations
+        vol_term_structure = []
+        for exp in expirations[:3]:
+            try:
+                term_chain = tk.option_chain(exp)
+                term_calls = term_chain.calls
+                term_puts = term_chain.puts
+                
+                term_calls['abs_diff'] = abs(term_calls['strike'] - current_price)
+                term_puts['abs_diff'] = abs(term_puts['strike'] - current_price)
+                
+                term_atm_call = term_calls.loc[term_calls['abs_diff'].idxmin()]
+                term_atm_put = term_puts.loc[term_puts['abs_diff'].idxmin()]
+                term_atm_iv = (term_atm_call['impliedVolatility'] + term_atm_put['impliedVolatility']) / 2
+                
+                vol_term_structure.append({
+                    "expiry": exp,
+                    "atm_iv": term_atm_iv
+                })
+            except Exception as exc:
+                logger.warning("vol_term_structure_error", ticker=ticker_symbol, expiry=exp, error=str(exc))
+        
         # Build smile data from calls for simplicity
         smile_data = calls[['strike', 'impliedVolatility']].rename(columns={'impliedVolatility': 'iv'}).dropna().to_dict('records')
         
@@ -51,7 +73,8 @@ def get_vol_surface(ticker_symbol: str):
             "otm_put_iv": otm_put['impliedVolatility'],
             "otm_call_iv": otm_call['impliedVolatility'],
             "skew": skew,
-            "smile_data": smile_data
+            "smile_data": smile_data,
+            "vol_term_structure": vol_term_structure
         }
     except Exception as e:
         return {"error": str(e)}

@@ -59,6 +59,7 @@ def test_summary_mocked_endpoint(mock_run_cross_analysis):
         "signal": "long_vol",
         "status": "Markov: ok | Vol: ok",
         "smile_data": [],
+        "vol_term_structure": [],
         "regime_history": []
     }
     

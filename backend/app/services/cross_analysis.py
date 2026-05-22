@@ -12,11 +12,13 @@ def run_cross_analysis(ticker: str):
         iv_atm = 0.0
         skew = 0.0
         smile_data = []
+        vol_term_structure = []
         vol_status = vol_data["error"]
     else:
         iv_atm = float(vol_data.get("atm_iv", 0.0))
         skew = float(vol_data.get("skew", 0.0))
         smile_data = vol_data.get("smile_data", [])
+        vol_term_structure = vol_data.get("vol_term_structure", [])
         vol_status = "ok"
 
     # Get Markov Data
@@ -69,5 +71,6 @@ def run_cross_analysis(ticker: str):
         "signal": signal,
         "status": f"Markov: {markov_status} | Vol: {vol_status}",
         "smile_data": smile_data,
+        "vol_term_structure": vol_term_structure,
         "regime_history": regime_history
     }
