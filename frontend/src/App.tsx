@@ -5,6 +5,8 @@ import Q3History from './components/Q3History'
 import Q4Table from './components/Q4Table'
 import TickerTape, { TickerData } from './components/TickerTape'
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
 // Helper to generate mock candlestick data
 function generateMockRegimeHistory() {
   const data = [];
@@ -38,7 +40,7 @@ function App() {
 
   const fetchWatchlist = async () => {
     try {
-      const res = await fetch('http://localhost:8000/v1/watchlist/summary', {
+      const res = await fetch(`${API_BASE}/v1/watchlist/summary`, {
         headers: { 'X-API-Key': 'quant-secret-key' }
       })
       if (res.ok) {
@@ -55,7 +57,7 @@ function App() {
     if (!newTicker.trim()) return
     setIsAdding(true)
     try {
-      await fetch('http://localhost:8000/v1/watchlist', {
+      await fetch(`${API_BASE}/v1/watchlist`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -73,7 +75,7 @@ function App() {
 
   const handleRemoveTicker = async (ticker: string) => {
     try {
-      await fetch(`http://localhost:8000/v1/watchlist/${ticker}`, {
+      await fetch(`${API_BASE}/v1/watchlist/${ticker}`, {
         method: 'DELETE',
         headers: { 'X-API-Key': 'quant-secret-key' }
       })
