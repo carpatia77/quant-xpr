@@ -1,0 +1,17 @@
+openapi: 3.0.0
+info:
+  title: Quant Engine API
+  version: 1.0.0
+paths:
+  /v1/summary/{ticker}:
+    get:
+      summary: Get Cross Analysis Summary
+      parameters:
+        - name: ticker
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
