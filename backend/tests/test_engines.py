@@ -85,4 +85,4 @@ def test_vol_surface_mocked(mock_ticker):
     
     vol_data = get_vol_surface("FAKE")
     assert "error" in vol_data
-    assert "No options chains found" in vol_data["error"]
+    assert "Nenhuma cadeia de" in vol_data["error"]
