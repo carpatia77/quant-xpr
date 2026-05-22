@@ -26,8 +26,8 @@ def fetch_ticker_data(ticker: str, years: int = 10) -> pd.DataFrame:
             return df
 
         if attempt == 1:
-            print("  ! yfinance returned empty data — retrying in 30s.")
-            time.sleep(30)
+            print(f"  ! yfinance returned empty data — retrying in {5 * attempt}s.")
+            time.sleep(5 * attempt)
 
     raise RuntimeError(
         f"yfinance returned empty data for {ticker} after retry. "
