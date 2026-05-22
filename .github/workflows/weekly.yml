@@ -34,14 +34,8 @@ jobs:
           pip install -r requirements.txt
           
       - name: Run Weekly Ingestion Job
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           cd ingestion
           python weekly_job.py
-          
-      # Opcional: Passo para salvar a base Parquet/CSV (se gerada) como Artifact ou commitar de volta
-      - name: Upload Ingestion Data Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ingestion-data
-          path: ingestion/*.csv # Ou .parquet, dependendo de como você configurar a saída do script
-          if-no-files-found: ignore

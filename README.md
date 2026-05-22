@@ -17,12 +17,21 @@ This monorepo contains the Backend API, the Frontend Dashboard, and the Ingestio
 - Python 3.11+
 - `uv` package manager (`pip install uv`)
 
-### 1. Backend Setup
+### 1. Backend Setup & Supabase
 
 ```bash
 cd backend
 uv pip install -r requirements.txt
 ```
+
+**Supabase (Cloud DB):** 
+The ingestion pipeline runs on GitHub Actions and connects to a Supabase PostgreSQL database. To enable this:
+1. Create a free project on [Supabase](https://supabase.com/).
+2. Get your connection string (e.g. `postgresql://postgres.[YOUR_PROJECT]:[PASSWORD]@aws-0-sa-east-1.pooler.supabase.com:6543/postgres`).
+3. In your GitHub repository, go to **Settings > Secrets and variables > Actions**.
+4. Add a New Repository Secret: `DATABASE_URL` and paste the connection string.
+
+By default, local development uses SQLite (in the `backend/` directory). To test with Supabase locally, create a `.env` file in the `backend/` directory with `DATABASE_URL=sua_url_aqui`.
 
 ### 2. Database Migrations
 
