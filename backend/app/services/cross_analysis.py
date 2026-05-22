@@ -26,9 +26,9 @@ def run_cross_analysis(ticker: str):
         labels = label_regimes(close, window=20, threshold=0.02)
         P = build_transition_matrix(labels)
         pi = stationary_distribution(P)
-        # pi returns [Bear, Sideways, Bull]
-        markov_bull_prob = float(pi[2])
-        markov_bear_prob = float(pi[0])
+        current_state = int(labels.iloc[-1])
+        markov_bull_prob = float(P[current_state, 2])
+        markov_bear_prob = float(P[current_state, 0])
         markov_status = "ok"
     except Exception as e:
         markov_bull_prob = 0.0

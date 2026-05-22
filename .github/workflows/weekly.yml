@@ -1,11 +1,35 @@
 name: Weekly Ingestion
 on:
   schedule:
-    - cron: '0 0 * * 0'
+    - cron: '0 0 * * 0' # Roda todo domingo à meia-noite
+  workflow_dispatch: # Permite disparar o job manualmente pelo painel do GitHub
 jobs:
   ingest:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Run ingestion
-        run: echo "Running ingestion..."
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip' # Acelera a instalação nas próximas runs
+          
+      - name: Install Ingestion Dependencies
+        run: |
+          cd ingestion
+          pip install -r requirements.txt
+          
+      - name: Run Weekly Ingestion Job
+        run: |
+          cd ingestion
+          python weekly_job.py
+          
+      # Opcional: Passo para salvar a base Parquet/CSV (se gerada) como Artifact ou commitar de volta
+      - name: Upload Ingestion Data Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ingestion-data
+          path: ingestion/*.csv # Ou .parquet, dependendo de como você configurar a saída do script
+          if-no-files-found: ignore

@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException, Security
 from fastapi.security.api_key import APIKeyHeader
+from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1 import endpoints
 from app.db.database import engine, Base
 import os
@@ -8,6 +9,14 @@ import os
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Quant Engine API", version="1.0.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 API_KEY = os.getenv("API_KEY", "quant-secret-key")
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
