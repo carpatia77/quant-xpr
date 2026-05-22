@@ -1,6 +1,7 @@
 from app.engines.markov_hedge_fund_method.regime import label_regimes, build_transition_matrix, stationary_distribution
 from app.engines.run_vol import get_vol_surface
 from app.services.data_fetcher import fetch_ticker_data
+from app.core.config import settings
 
 def run_cross_analysis(ticker: str):
     # Get Volatility Data
@@ -46,13 +47,13 @@ def run_cross_analysis(ticker: str):
     
     # Generate Signal
     if markov_status == "ok":
-        if markov_bull_prob > 0.5 and iv_atm < 0.35 and vol_status == "ok":
+        if markov_bull_prob > settings.BULL_THRESHOLD and iv_atm < settings.IV_MAX_CHEAP and vol_status == "ok":
             signal = "long_vol"
-        elif markov_bull_prob > 0.5 and skew > 0.02 and vol_status == "ok":
+        elif markov_bull_prob > settings.BULL_THRESHOLD and skew > settings.SKEW_MIN_REVERSAL and vol_status == "ok":
             signal = "risk_reversal"
-        elif markov_bull_prob > 0.5:
+        elif markov_bull_prob > settings.BULL_THRESHOLD:
             signal = "directional_bull"
-        elif markov_bear_prob > 0.5:
+        elif markov_bear_prob > settings.BULL_THRESHOLD:
             signal = "directional_bear"
         else:
             signal = "neutral"
