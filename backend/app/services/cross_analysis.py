@@ -5,8 +5,15 @@ from app.services.risk_free_rate import get_selic_anual
 from app.core.config import settings
 
 def run_cross_analysis(ticker: str):
-    # Get Volatility Data
-    vol_data = get_vol_surface(ticker)
+    # Fetch risk free rate first
+    risk_free_rate = 0.0
+    risk_free_rate_source = "Zero (International Asset)"
+    if ticker.endswith(".SA"):
+        risk_free_rate = get_selic_anual()
+        risk_free_rate_source = "BCB SGS 11 (Selic Over)"
+
+    # Get Volatility Data using Forward Adjustment
+    vol_data = get_vol_surface(ticker, risk_free_rate)
     
     # Extract metrics
     if "error" in vol_data:
@@ -62,12 +69,6 @@ def run_cross_analysis(ticker: str):
             signal = "neutral"
     else:
         signal = "error_fetching_data"
-        
-    risk_free_rate = 0.0
-    risk_free_rate_source = "Zero (International Asset)"
-    if ticker.endswith(".SA"):
-        risk_free_rate = get_selic_anual()
-        risk_free_rate_source = "BCB SGS 11 (Selic Over)"
         
     return {
         "ticker": ticker,

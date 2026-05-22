@@ -2,9 +2,11 @@
 import yfinance as yf
 import pandas as pd
 import argparse
+import math
+from datetime import datetime
 import sys
 
-def get_vol_surface(ticker_symbol: str):
+def get_vol_surface(ticker_symbol: str, risk_free_rate: float = 0.0):
     tk = yf.Ticker(ticker_symbol)
     try:
         current_price = tk.history(period="1d")['Close'].iloc[-1]
@@ -17,17 +19,24 @@ def get_vol_surface(ticker_symbol: str):
         calls = chain.calls
         puts = chain.puts
         
-        # Filtrar Strikes próximos ao preço atual (ATM)
-        calls['abs_diff'] = abs(calls['strike'] - current_price)
-        puts['abs_diff'] = abs(puts['strike'] - current_price)
+        # Calculate Forward Price for nearest expiry
+        expiry_date = datetime.strptime(nearest_expiry, "%Y-%m-%d")
+        days_to_expiry = (expiry_date - datetime.now()).days
+        if days_to_expiry <= 0: days_to_expiry = 1
+        T = days_to_expiry / 365.0
+        forward_price = current_price * math.exp(risk_free_rate * T)
+        
+        # Filtrar Strikes próximos ao preço forward (ATM)
+        calls['abs_diff'] = abs(calls['strike'] - forward_price)
+        puts['abs_diff'] = abs(puts['strike'] - forward_price)
         
         atm_call = calls.loc[calls['abs_diff'].idxmin()]
         atm_put = puts.loc[puts['abs_diff'].idxmin()]
         atm_iv = (atm_call['impliedVolatility'] + atm_put['impliedVolatility']) / 2
         
-        # Filtrar Strikes OTM (~10% out of the money)
-        otm_call_strike = current_price * 1.10
-        otm_put_strike = current_price * 0.90
+        # Filtrar Strikes OTM (~10% out of the money) sobre o forward
+        otm_call_strike = forward_price * 1.10
+        otm_put_strike = forward_price * 0.90
         
         otm_call = calls.iloc[(calls['strike'] - otm_call_strike).abs().argsort()[:1]].iloc[0]
         otm_put = puts.iloc[(puts['strike'] - otm_put_strike).abs().argsort()[:1]].iloc[0]
@@ -48,8 +57,14 @@ def get_vol_surface(ticker_symbol: str):
                 term_calls = term_chain.calls
                 term_puts = term_chain.puts
                 
-                term_calls['abs_diff'] = abs(term_calls['strike'] - current_price)
-                term_puts['abs_diff'] = abs(term_puts['strike'] - current_price)
+                exp_date = datetime.strptime(exp, "%Y-%m-%d")
+                exp_days = (exp_date - datetime.now()).days
+                if exp_days <= 0: exp_days = 1
+                exp_T = exp_days / 365.0
+                term_forward_price = current_price * math.exp(risk_free_rate * exp_T)
+                
+                term_calls['abs_diff'] = abs(term_calls['strike'] - term_forward_price)
+                term_puts['abs_diff'] = abs(term_puts['strike'] - term_forward_price)
                 
                 term_atm_call = term_calls.loc[term_calls['abs_diff'].idxmin()]
                 term_atm_put = term_puts.loc[term_puts['abs_diff'].idxmin()]
