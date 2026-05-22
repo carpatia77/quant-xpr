@@ -34,6 +34,9 @@ def get_vol_surface(ticker_symbol: str):
         
         skew = otm_put['impliedVolatility'] - otm_call['impliedVolatility']
         
+        # Build smile data from calls for simplicity
+        smile_data = calls[['strike', 'impliedVolatility']].rename(columns={'impliedVolatility': 'iv'}).dropna().to_dict('records')
+        
         return {
             "ticker": ticker_symbol,
             "spot_price": current_price,
@@ -41,7 +44,8 @@ def get_vol_surface(ticker_symbol: str):
             "atm_iv": atm_iv,
             "otm_put_iv": otm_put['impliedVolatility'],
             "otm_call_iv": otm_call['impliedVolatility'],
-            "skew": skew
+            "skew": skew,
+            "smile_data": smile_data
         }
     except Exception as e:
         return {"error": str(e)}

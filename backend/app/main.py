@@ -1,14 +1,21 @@
-from fastapi import FastAPI, Depends, HTTPException, Security
+from fastapi import FastAPI, Depends, HTTPException, Security, Request
 from fastapi.security.api_key import APIKeyHeader
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.v1 import endpoints
-from app.db.database import engine, Base
-import os
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+import time
 
-# Create tables
-Base.metadata.create_all(bind=engine)
+from app.api.v1 import endpoints
+from app.core.config import settings
+from app.core.logger import logger
+from app.core.rate_limit import limiter
 
 app = FastAPI(title="Quant Engine API", version="1.0.0")
+
+# Register Limiter
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
@@ -18,7 +25,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-API_KEY = os.getenv("API_KEY", "quant-secret-key")
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = (time.time() - start_time) * 1000
+    
+    logger.info(
+        "request_completed",
+        method=request.method,
+        path=request.url.path,
+        status_code=response.status_code,
+        process_time_ms=f"{process_time:.2f}"
+    )
+    return response
+
+API_KEY = settings.API_KEY
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 def get_api_key(api_key_header: str = Security(api_key_header)):
@@ -26,7 +48,7 @@ def get_api_key(api_key_header: str = Security(api_key_header)):
         return api_key_header
     raise HTTPException(status_code=403, detail="Could not validate API KEY")
 
-app.include_router(endpoints.router, prefix="/v1", dependencies=[Depends(get_api_key)])
+app.include_router(endpoints.router, prefix=settings.API_V1_STR, dependencies=[Depends(get_api_key)])
 
 @app.get("/health")
 def health_check():

@@ -15,6 +15,18 @@ jobs:
         with:
           python-version: '3.12'
           cache: 'pip' # Acelera a instalação nas próximas runs
+        
+      - name: Install dependencies (Backend & Tests)
+        run: |
+          python -m pip install --upgrade pip
+          pip install uv
+          cd backend
+          uv pip install -r requirements.txt --system
+        
+      - name: Run Tests (Pytest)
+        run: |
+          cd backend
+          PYTHONPATH=. pytest tests/
           
       - name: Install Ingestion Dependencies
         run: |

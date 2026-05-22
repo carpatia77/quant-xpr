@@ -1,13 +1,13 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime
 from app.db.database import Base
-from datetime import datetime
+from datetime import datetime, timezone
 
 class AnalysisResult(Base):
     __tablename__ = "analysis_results"
 
     id = Column(Integer, primary_key=True, index=True)
     ticker = Column(String, index=True)
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     markov_bull_prob = Column(Float)
     markov_bear_prob = Column(Float)
     iv_atm = Column(Float)
