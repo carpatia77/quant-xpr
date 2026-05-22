@@ -57,9 +57,11 @@ def run_cross_analysis(ticker: str):
     
     # Generate Signal
     if markov_status == "ok":
+        dynamic_skew_threshold = settings.SKEW_MIN_REVERSAL + (0.5 * risk_free_rate)
+        
         if markov_bull_prob > settings.BULL_THRESHOLD and iv_atm < settings.IV_MAX_CHEAP and vol_status == "ok":
             signal = "long_vol"
-        elif markov_bull_prob > settings.BULL_THRESHOLD and skew > settings.SKEW_MIN_REVERSAL and vol_status == "ok":
+        elif markov_bull_prob > settings.BULL_THRESHOLD and skew > dynamic_skew_threshold and vol_status == "ok":
             signal = "risk_reversal"
         elif markov_bull_prob > settings.BULL_THRESHOLD:
             signal = "directional_bull"
