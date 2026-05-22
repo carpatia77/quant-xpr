@@ -31,4 +31,12 @@ jobs:
           API_KEY: ${{ secrets.API_KEY }}
         run: |
           cd backend
-          PYTHONPATH=. pytest tests/ -m "not slow"
+          PYTHONPATH=. pytest tests/ -m "not slow" --cov=app --cov-report=xml
+          
+      - name: Code Coverage Summary
+        run: |
+          cd backend
+          echo "## Code Coverage Report 📊" >> $GITHUB_STEP_SUMMARY
+          echo '```text' >> $GITHUB_STEP_SUMMARY
+          python -m coverage report >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY

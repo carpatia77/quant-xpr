@@ -28,7 +28,7 @@ jobs:
           API_KEY: ${{ secrets.API_KEY }}
         run: |
           cd backend
-          PYTHONPATH=. pytest tests/ -m "not slow"
+          PYTHONPATH=. pytest tests/ -m "not slow" --cov=app --cov-report=xml
           
       - name: Install Ingestion Dependencies
         run: |
