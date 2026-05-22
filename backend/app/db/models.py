@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime
+from sqlalchemy import Column, Integer, String, Float, DateTime, Index
 from app.db.database import Base
 from datetime import datetime, timezone
 
@@ -14,3 +14,5 @@ class AnalysisResult(Base):
     skew = Column(Float)
     signal = Column(String)
     status = Column(String)
+
+Index("ix_analysis_ticker_ts", AnalysisResult.ticker, AnalysisResult.timestamp)
