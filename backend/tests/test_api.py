@@ -60,7 +60,9 @@ def test_summary_mocked_endpoint(mock_run_cross_analysis):
         "status": "Markov: ok | Vol: ok",
         "smile_data": [],
         "vol_term_structure": [],
-        "regime_history": []
+        "regime_history": [],
+        "risk_free_rate": 0.1325,
+        "risk_free_rate_source": "BCB SGS 11 (Selic Over)"
     }
     
     response = client.get(f"{settings.API_V1_STR}/summary/MOCK_TICKER", headers=headers)

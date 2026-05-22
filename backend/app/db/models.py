@@ -12,6 +12,7 @@ class AnalysisResult(Base):
     markov_bear_prob = Column(Float)
     iv_atm = Column(Float)
     skew = Column(Float)
+    risk_free_rate = Column(Float, nullable=True)
     signal = Column(String)
     status = Column(String)
 

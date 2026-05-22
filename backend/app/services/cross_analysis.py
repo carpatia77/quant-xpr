@@ -1,6 +1,7 @@
 from app.engines.markov_hedge_fund_method.regime import label_regimes, build_transition_matrix, stationary_distribution
 from app.engines.run_vol import get_vol_surface
 from app.services.data_fetcher import fetch_ticker_data
+from app.services.risk_free_rate import get_selic_anual
 from app.core.config import settings
 
 def run_cross_analysis(ticker: str):
@@ -62,6 +63,12 @@ def run_cross_analysis(ticker: str):
     else:
         signal = "error_fetching_data"
         
+    risk_free_rate = 0.0
+    risk_free_rate_source = "Zero (International Asset)"
+    if ticker.endswith(".SA"):
+        risk_free_rate = get_selic_anual()
+        risk_free_rate_source = "BCB SGS 11 (Selic Over)"
+        
     return {
         "ticker": ticker,
         "markov_bull_prob": round(markov_bull_prob, 4),
@@ -72,5 +79,7 @@ def run_cross_analysis(ticker: str):
         "status": f"Markov: {markov_status} | Vol: {vol_status}",
         "smile_data": smile_data,
         "vol_term_structure": vol_term_structure,
-        "regime_history": regime_history
+        "regime_history": regime_history,
+        "risk_free_rate": round(risk_free_rate, 6),
+        "risk_free_rate_source": risk_free_rate_source
     }
