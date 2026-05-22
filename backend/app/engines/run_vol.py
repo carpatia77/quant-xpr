@@ -32,7 +32,13 @@ def get_vol_surface(ticker_symbol: str):
         otm_call = calls.iloc[(calls['strike'] - otm_call_strike).abs().argsort()[:1]].iloc[0]
         otm_put = puts.iloc[(puts['strike'] - otm_put_strike).abs().argsort()[:1]].iloc[0]
         
+        import structlog
+        logger = structlog.get_logger(__name__)
+        
         skew = otm_put['impliedVolatility'] - otm_call['impliedVolatility']
+        if pd.isna(skew):
+            logger.warning("vol_surface_skew_nan", ticker=ticker_symbol, msg="Illiquid OTM options caused NaN skew, falling back to 0.0")
+            skew = 0.0
         
         # Build smile data from calls for simplicity
         smile_data = calls[['strike', 'impliedVolatility']].rename(columns={'impliedVolatility': 'iv'}).dropna().to_dict('records')
