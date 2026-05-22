@@ -19,6 +19,15 @@ export default {
       fontFamily: {
         mono: ['JetBrains Mono', 'IBM Plex Mono', 'monospace'],
       },
+      keyframes: {
+        marquee: {
+          '0%': { transform: 'translateX(0%)' },
+          '100%': { transform: 'translateX(-50%)' }, // Translates 50% because we duplicate the content to make it seamless
+        }
+      },
+      animation: {
+        marquee: 'marquee 30s linear infinite',
+      }
     },
   },
   plugins: [],

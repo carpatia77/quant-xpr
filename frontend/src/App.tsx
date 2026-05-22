@@ -3,6 +3,7 @@ import Q1Signal from './components/Q1Signal'
 import Q2Smile from './components/Q2Smile'
 import Q3History from './components/Q3History'
 import Q4Table from './components/Q4Table'
+import TickerTape, { TickerData } from './components/TickerTape'
 
 // Helper to generate mock candlestick data
 function generateMockRegimeHistory() {
@@ -23,6 +24,14 @@ function generateMockRegimeHistory() {
   }
   return data;
 }
+
+const mockTapeAssets: TickerData[] = [
+  { ticker: "SPY", signal: "RISK_REVERSAL", iv_atm: 0.15 },
+  { ticker: "QQQ", signal: "long_vol", iv_atm: 0.18 },
+  { ticker: "PETR4.SA", signal: "short_vol", iv_atm: 0.28 },
+  { ticker: "VALE3.SA", signal: "neutral", iv_atm: 0.32 },
+  { ticker: "BOVA11.SA", signal: "RISK_REVERSAL", iv_atm: 0.22 },
+];
 
 function App() {
   const [data, setData] = useState<any>(null)
@@ -65,8 +74,12 @@ function App() {
   }, [])
 
   return (
-    <div className="h-screen w-screen bg-background flex flex-col p-2 overflow-hidden">
-      <header className="flex items-center justify-between border-b border-border pb-2 mb-2 shrink-0">
+    <div className="h-screen w-screen bg-background flex flex-col overflow-hidden">
+      {/* Ticker Tape */}
+      <TickerTape items={mockTapeAssets} />
+
+      <div className="flex-1 flex flex-col p-2 min-h-0">
+        <header className="flex items-center justify-between border-b border-border pb-2 mb-2 shrink-0">
         <div className="flex items-center gap-4">
           <h1 className="text-xl font-bold text-accent tracking-widest px-2">QUANT_XPR</h1>
           <span className="text-xs bg-panel px-2 py-1 border border-border text-muted-foreground font-bold tracking-widest">
@@ -107,6 +120,7 @@ function App() {
 
         </div>
       )}
+      </div>
     </div>
   )
 }
