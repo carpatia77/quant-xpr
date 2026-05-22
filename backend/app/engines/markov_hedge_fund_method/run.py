@@ -40,7 +40,7 @@ def _fetch_with_retry(ticker: str, years: int) -> pd.DataFrame:
     """Fetch via yfinance with one retry; raise on persistent empty."""
     import yfinance as yf
 
-    end = pd.Timestamp.utcnow().normalize()
+    end = pd.Timestamp.now("UTC").normalize()
     start = end - pd.DateOffset(years=years)
 
     for attempt in (1, 2):
