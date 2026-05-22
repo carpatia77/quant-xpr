@@ -1,9 +1,81 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quant Dashboard</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #121212; color: #e0e0e0; margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .card { background-color: #1e1e1e; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); margin-top: 20px; }
+        input[type="text"] { padding: 10px; width: calc(100% - 130px); border: none; border-radius: 4px; background: #2d2d2d; color: white; }
+        button { padding: 10px 20px; border: none; border-radius: 4px; background: #007bff; color: white; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .metric { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #333; }
+        .signal-box { font-size: 1.5em; font-weight: bold; text-align: center; padding: 15px; margin-top: 20px; border-radius: 4px; background: #2d2d2d; }
+        .success { color: #4caf50; }
+        .error { color: #f44336; }
+    </style>
 </head>
 <body>
-    <h1>Quant Dashboard (Stub)</h1>
+    <div class="container">
+        <h1>📈 Quant Engine Dashboard</h1>
+        <div class="card">
+            <input type="text" id="ticker" placeholder="Enter Ticker (e.g. SPY, PETR4.SA)" value="SPY">
+            <button onclick="fetchSummary()">Analyze</button>
+            <div id="loader" style="display:none; margin-top: 10px;">⏳ Running Markov & Volatility models... (This takes a few seconds)</div>
+        </div>
+
+        <div class="card" id="results" style="display: none;">
+            <h2>Results for <span id="res-ticker"></span></h2>
+            <div class="metric"><span>Markov Bull Probability:</span> <span id="res-bull"></span></div>
+            <div class="metric"><span>Markov Bear Probability:</span> <span id="res-bear"></span></div>
+            <div class="metric"><span>ATM Implied Volatility:</span> <span id="res-iv"></span></div>
+            <div class="metric"><span>Volatility Skew:</span> <span id="res-skew"></span></div>
+            <div class="metric"><span>Engine Status:</span> <span id="res-status"></span></div>
+            
+            <div class="signal-box" id="res-signal"></div>
+        </div>
+    </div>
+
+    <script>
+        async function fetchSummary() {
+            const ticker = document.getElementById('ticker').value;
+            const loader = document.getElementById('loader');
+            const results = document.getElementById('results');
+            
+            loader.style.display = 'block';
+            results.style.display = 'none';
+
+            try {
+                // Adjust port/host if necessary
+                const response = await fetch(`http://localhost:8000/v1/summary/${ticker}`, {
+                    headers: { 'X-API-Key': 'quant-secret-key' }
+                });
+                
+                if (!response.ok) throw new Error('API Error or Invalid API Key');
+                
+                const data = await response.json();
+                
+                document.getElementById('res-ticker').textContent = data.ticker;
+                document.getElementById('res-bull').textContent = (data.markov_bull_prob * 100).toFixed(2) + '%';
+                document.getElementById('res-bear').textContent = (data.markov_bear_prob * 100).toFixed(2) + '%';
+                document.getElementById('res-iv').textContent = (data.iv_atm * 100).toFixed(2) + '%';
+                document.getElementById('res-skew').textContent = (data.skew * 100).toFixed(2) + '%';
+                document.getElementById('res-status').textContent = data.status;
+                
+                const signalBox = document.getElementById('res-signal');
+                signalBox.textContent = `STRATEGY SIGNAL: ${data.signal.toUpperCase()}`;
+                if (data.signal.includes('error')) signalBox.className = 'signal-box error';
+                else signalBox.className = 'signal-box success';
+
+                results.style.display = 'block';
+            } catch (err) {
+                alert(err.message);
+            } finally {
+                loader.style.display = 'none';
+            }
+        }
+    </script>
 </body>
 </html>

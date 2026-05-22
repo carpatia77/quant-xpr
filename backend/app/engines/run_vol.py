@@ -1,0 +1,72 @@
+"""Volatility Surface and Skew Extractor via yfinance."""
+import yfinance as yf
+import pandas as pd
+import argparse
+import sys
+
+def get_vol_surface(ticker_symbol: str):
+    tk = yf.Ticker(ticker_symbol)
+    try:
+        current_price = tk.history(period="1d")['Close'].iloc[-1]
+        expirations = tk.options
+        if not expirations:
+            return {"error": "Nenhuma cadeia de opções encontrada."}
+        
+        nearest_expiry = expirations[0]
+        chain = tk.option_chain(nearest_expiry)
+        calls = chain.calls
+        puts = chain.puts
+        
+        # Filtrar Strikes próximos ao preço atual (ATM)
+        calls['abs_diff'] = abs(calls['strike'] - current_price)
+        puts['abs_diff'] = abs(puts['strike'] - current_price)
+        
+        atm_call = calls.loc[calls['abs_diff'].idxmin()]
+        atm_put = puts.loc[puts['abs_diff'].idxmin()]
+        atm_iv = (atm_call['impliedVolatility'] + atm_put['impliedVolatility']) / 2
+        
+        # Filtrar Strikes OTM (~10% out of the money)
+        otm_call_strike = current_price * 1.10
+        otm_put_strike = current_price * 0.90
+        
+        otm_call = calls.iloc[(calls['strike'] - otm_call_strike).abs().argsort()[:1]].iloc[0]
+        otm_put = puts.iloc[(puts['strike'] - otm_put_strike).abs().argsort()[:1]].iloc[0]
+        
+        skew = otm_put['impliedVolatility'] - otm_call['impliedVolatility']
+        
+        return {
+            "ticker": ticker_symbol,
+            "spot_price": current_price,
+            "expiry": nearest_expiry,
+            "atm_iv": atm_iv,
+            "otm_put_iv": otm_put['impliedVolatility'],
+            "otm_call_iv": otm_call['impliedVolatility'],
+            "skew": skew
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--ticker", default="PETR4.SA")
+    args = parser.parse_args()
+    
+    print(f"Buscando superfície de volatilidade para {args.ticker}...")
+    res = get_vol_surface(args.ticker)
+    
+    if "error" in res:
+        print(f"Erro: {res['error']}")
+        sys.exit(1)
+        
+    print(f"\n--- RELATÓRIO DE VOLATILIDADE: {res['ticker']} ---")
+    print(f"Vencimento mais próximo: {res['expiry']}")
+    print(f"Preço Spot Atual: R$ {res['spot_price']:.2f}")
+    print(f"Volatilidade ATM Média: {res['atm_iv']*100:.2f}%")
+    print(f"Skew (Put OTM - Call OTM): {res['skew']*100:.2f}%")
+    if res['skew'] > 0:
+        print(">> Mercado está precificando MAIOR RISCO DE QUEDA (Puts mais caras que Calls).")
+    else:
+        print(">> Mercado está precificando MAIOR RISCO DE ALTA (Calls mais caras que Puts).")
+
+if __name__ == "__main__":
+    main()
