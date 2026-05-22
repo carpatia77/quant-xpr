@@ -48,3 +48,72 @@ async def get_history(request: Request, ticker: str, limit: int = 10, db: Sessio
 async def get_assets(request: Request, db: Session = Depends(get_db)):
     assets = db.query(AnalysisResult.ticker).distinct().all()
     return [a[0] for a in assets]
+
+from pydantic import BaseModel
+from app.db.models import WatchlistItem
+
+class WatchlistCreate(BaseModel):
+    ticker: str
+
+@router.get("/watchlist")
+@limiter.limit("30/minute")
+async def get_watchlist(request: Request, db: Session = Depends(get_db)):
+    items = db.query(WatchlistItem).order_by(WatchlistItem.added_at.asc()).all()
+    return [item.ticker for item in items]
+
+@router.post("/watchlist")
+@limiter.limit("10/minute")
+async def add_watchlist_item(request: Request, item: WatchlistCreate, db: Session = Depends(get_db)):
+    ticker = item.ticker.upper()
+    existing = db.query(WatchlistItem).filter(WatchlistItem.ticker == ticker).first()
+    if not existing:
+        new_item = WatchlistItem(ticker=ticker)
+        db.add(new_item)
+        db.commit()
+    return {"status": "success", "ticker": ticker}
+
+@router.delete("/watchlist/{ticker}")
+@limiter.limit("10/minute")
+async def remove_watchlist_item(request: Request, ticker: str, db: Session = Depends(get_db)):
+    ticker = ticker.upper()
+    item = db.query(WatchlistItem).filter(WatchlistItem.ticker == ticker).first()
+    if item:
+        db.delete(item)
+        db.commit()
+    return {"status": "success", "ticker": ticker}
+
+@router.get("/watchlist/summary")
+@limiter.limit("30/minute")
+async def get_watchlist_summary(request: Request, db: Session = Depends(get_db)):
+    """
+    Returns the latest AnalysisResult for each ticker in the watchlist.
+    Useful for the frontend TickerTape.
+    """
+    watchlist_tickers = [item.ticker for item in db.query(WatchlistItem).all()]
+    if not watchlist_tickers:
+        return []
+        
+    results = []
+    for ticker in watchlist_tickers:
+        latest = db.query(AnalysisResult).filter(AnalysisResult.ticker == ticker).order_by(AnalysisResult.timestamp.desc()).first()
+        if latest:
+            results.append({
+                "ticker": latest.ticker,
+                "signal": latest.signal,
+                "iv_atm": latest.iv_atm,
+                "skew": latest.skew,
+                "risk_free_rate": latest.risk_free_rate,
+                "markov_bull_prob": latest.markov_bull_prob,
+                "markov_bear_prob": latest.markov_bear_prob
+            })
+        else:
+            results.append({
+                "ticker": ticker,
+                "signal": "WAITING_DATA",
+                "iv_atm": 0.0,
+                "skew": 0.0,
+                "risk_free_rate": 0.0,
+                "markov_bull_prob": 0.0,
+                "markov_bear_prob": 0.0
+            })
+    return results

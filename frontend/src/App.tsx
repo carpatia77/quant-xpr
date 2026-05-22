@@ -25,21 +25,69 @@ function generateMockRegimeHistory() {
   return data;
 }
 
-const mockTapeAssets: TickerData[] = [
-  { ticker: "SPY", signal: "RISK_REVERSAL", iv_atm: 0.15 },
-  { ticker: "QQQ", signal: "long_vol", iv_atm: 0.18 },
-  { ticker: "PETR4.SA", signal: "short_vol", iv_atm: 0.28 },
-  { ticker: "VALE3.SA", signal: "neutral", iv_atm: 0.32 },
-  { ticker: "BOVA11.SA", signal: "RISK_REVERSAL", iv_atm: 0.22 },
-];
+
 
 function App() {
   const [data, setData] = useState<any>(null)
   const [history, setHistory] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
+  const [tapeData, setTapeData] = useState<TickerData[]>([])
+  const [newTicker, setNewTicker] = useState('')
+  const [isAdding, setIsAdding] = useState(false)
+
+  const fetchWatchlist = async () => {
+    try {
+      const res = await fetch('http://localhost:8000/v1/watchlist/summary', {
+        headers: { 'X-API-Key': 'quant-secret-key' }
+      })
+      if (res.ok) {
+        const json = await res.json()
+        setTapeData(json)
+      }
+    } catch (e) {
+      console.error("Failed to fetch watchlist", e)
+    }
+  }
+
+  const handleAddTicker = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newTicker.trim()) return
+    setIsAdding(true)
+    try {
+      await fetch('http://localhost:8000/v1/watchlist', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-API-Key': 'quant-secret-key'
+        },
+        body: JSON.stringify({ ticker: newTicker.trim().toUpperCase() })
+      })
+      setNewTicker('')
+      await fetchWatchlist()
+    } catch (e) {
+      console.error("Failed to add ticker", e)
+    }
+    setIsAdding(false)
+  }
+
+  const handleRemoveTicker = async (ticker: string) => {
+    try {
+      await fetch(`http://localhost:8000/v1/watchlist/${ticker}`, {
+        method: 'DELETE',
+        headers: { 'X-API-Key': 'quant-secret-key' }
+      })
+      await fetchWatchlist()
+    } catch (e) {
+      console.error("Failed to remove ticker", e)
+    }
+  }
+
   useEffect(() => {
-    // Mocking an API call for now to build the UI structure
+    fetchWatchlist()
+    const interval = setInterval(fetchWatchlist, 10000) // Poll every 10s
+
+    // Mocking an API call for now to build the UI structure for the main quadrats
     setTimeout(() => {
       setData({
         ticker: "PETR4.SA",
@@ -71,12 +119,14 @@ function App() {
       
       setLoading(false)
     }, 800)
+
+    return () => clearInterval(interval)
   }, [])
 
   return (
     <div className="h-screen w-screen bg-background flex flex-col overflow-hidden">
       {/* Ticker Tape */}
-      <TickerTape items={mockTapeAssets} />
+      <TickerTape items={tapeData} onRemove={handleRemoveTicker} />
 
       <div className="flex-1 flex flex-col p-2 min-h-0">
         <header className="flex items-center justify-between border-b border-border pb-2 mb-2 shrink-0">
@@ -85,6 +135,22 @@ function App() {
           <span className="text-xs bg-panel px-2 py-1 border border-border text-muted-foreground font-bold tracking-widest">
             {data ? data.ticker : "LOADING"}
           </span>
+          <form onSubmit={handleAddTicker} className="flex items-center ml-4">
+            <input 
+              type="text" 
+              placeholder="Add to Watchlist..." 
+              value={newTicker}
+              onChange={e => setNewTicker(e.target.value)}
+              className="bg-panel border border-border px-2 py-1 text-xs text-foreground focus:outline-none focus:border-accent w-40"
+            />
+            <button 
+              type="submit" 
+              disabled={isAdding}
+              className="bg-accent text-background px-3 py-1 text-xs font-bold hover:bg-accent/80 transition-colors disabled:opacity-50"
+            >
+              ADD
+            </button>
+          </form>
         </div>
         <div className="text-xs font-bold tracking-widest text-bull px-4 animate-pulse">
           MARKET DATA CONNECTED

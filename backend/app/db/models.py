@@ -17,3 +17,9 @@ class AnalysisResult(Base):
     status = Column(String)
 
 Index("ix_analysis_ticker_ts", AnalysisResult.ticker, AnalysisResult.timestamp)
+
+class WatchlistItem(Base):
+    __tablename__ = "watchlist_items"
+
+    ticker = Column(String, primary_key=True, index=True)
+    added_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
