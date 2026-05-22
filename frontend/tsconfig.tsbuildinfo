@@ -1,1 +1,1 @@
-{"root":["./src/app.tsx","./src/main.tsx"],"version":"5.6.3"}
+{"root":["./src/app.tsx","./src/main.tsx","./src/components/q1signal.tsx","./src/components/q2smile.tsx","./src/components/q3history.tsx","./src/components/q4table.tsx","./src/lib/utils.ts"],"version":"5.6.3"}
