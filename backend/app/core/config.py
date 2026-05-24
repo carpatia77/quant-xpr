@@ -5,7 +5,8 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite:///./quantdb.sqlite"
     API_V1_STR: str = "/v1"
     HG_BRASIL_API_KEY: str = ""
-    
+    BRAPI_TOKEN: str = "8gruo61zoRNS5pMmtma3oy"
+
     # Strategy Parameters
     BULL_THRESHOLD: float = 0.5
     IV_MAX_CHEAP: float = 0.35

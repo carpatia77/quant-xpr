@@ -1,36 +1,89 @@
+"""
+data_fetcher.py
+---------------
+Fonte única de dados históricos OHLCV: Brapi (brapi.dev).
+O yfinance foi removido desta camada. O motor de volatilidade (run_vol.py)
+continua usando yfinance apenas para a cadeia de opções, que a Brapi não fornece.
+
+Endpoint utilizado:
+  GET https://brapi.dev/api/quote/{ticker}
+  Parâmetros: range=10y, interval=1d, token=<BRAPI_TOKEN>
+
+Retorno: pd.DataFrame com colunas Open, High, Low, Close, Volume
+         indexado por DatetimeIndex UTC.
+"""
 import time
+import requests
 import pandas as pd
-import yfinance as yf
+from app.core.config import settings
+
+BRAPI_BASE = "https://brapi.dev/api"
+_TIMEOUT = 12  # segundos
+
+
+def _brapi_ticker(ticker: str) -> str:
+    """Remove sufixo .SA — Brapi usa apenas o código limpo (ex: PETR4)."""
+    return ticker.replace(".SA", "").upper()
+
 
 def fetch_ticker_data(ticker: str, years: int = 10) -> pd.DataFrame:
-    """Fetch via yfinance with one retry; raise on persistent empty."""
-    end = pd.Timestamp.now(tz="UTC").normalize()
-    start = end - pd.DateOffset(years=years)
+    """
+    Busca histórico OHLCV via Brapi.
+    Tenta range=10y primeiro; em caso de falha tenta range=5y.
+    Lança RuntimeError se ambas as tentativas falharem.
+    """
+    clean = _brapi_ticker(ticker)
+    ranges = ["10y", "5y"] if years >= 5 else ["1y"]
 
-    for attempt in (1, 2):
+    last_error = None
+    for rng in ranges:
         try:
-            df = yf.download(
-                ticker,
-                start=start.strftime("%Y-%m-%d"),
-                end=end.strftime("%Y-%m-%d"),
-                progress=False,
-                auto_adjust=True,
-                timeout=8,
-            )
-        except Exception as exc:
-            print(f"  ! yfinance error on attempt {attempt}: {exc}")
-            df = pd.DataFrame()
+            url = f"{BRAPI_BASE}/quote/{clean}"
+            params = {
+                "range": rng,
+                "interval": "1d",
+                "fundamental": "false",
+                "token": settings.BRAPI_TOKEN,
+            }
+            resp = requests.get(url, params=params, timeout=_TIMEOUT)
+            resp.raise_for_status()
+            payload = resp.json()
 
-        if not df.empty:
-            if isinstance(df.columns, pd.MultiIndex):
-                df.columns = df.columns.get_level_values(0)
+            results = payload.get("results", [])
+            if not results:
+                raise ValueError(f"Brapi retornou results vazio para {clean}")
+
+            historical = results[0].get("historicalDataPrice", [])
+            if not historical:
+                raise ValueError(f"Brapi sem historicalDataPrice para {clean} range={rng}")
+
+            df = pd.DataFrame(historical)
+            # Brapi retorna epoch em segundos na coluna 'date'
+            df["date"] = pd.to_datetime(df["date"], unit="s", utc=True)
+            df = df.set_index("date").sort_index()
+
+            # Padroniza nomes de colunas para Open/High/Low/Close/Volume
+            rename_map = {
+                "open": "Open",
+                "high": "High",
+                "low": "Low",
+                "close": "Close",
+                "volume": "Volume",
+                "adjustedClose": "Adj Close",
+            }
+            df = df.rename(columns=rename_map)
+            needed = ["Open", "High", "Low", "Close", "Volume"]
+            df = df[[c for c in needed if c in df.columns]].dropna(subset=["Close"])
+
+            if df.empty:
+                raise ValueError(f"DataFrame vazio após normalização para {clean}")
+
             return df
 
-        if attempt == 1:
-            print(f"  ! yfinance returned empty data — retrying in 2s.")
-            time.sleep(2)
+        except Exception as exc:
+            last_error = exc
+            time.sleep(1)
 
     raise RuntimeError(
-        f"yfinance returned empty data for {ticker} after retry. "
-        "Yahoo may be rate-limiting. Try again in a few minutes."
+        f"Brapi falhou para {ticker} após todas as tentativas. Último erro: {last_error}"
     )
