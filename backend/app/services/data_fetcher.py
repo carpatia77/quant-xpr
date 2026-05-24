@@ -4,7 +4,7 @@ import yfinance as yf
 
 def fetch_ticker_data(ticker: str, years: int = 10) -> pd.DataFrame:
     """Fetch via yfinance with one retry; raise on persistent empty."""
-    end = pd.Timestamp.now("UTC").normalize()
+    end = pd.Timestamp.now(tz="UTC").normalize()
     start = end - pd.DateOffset(years=years)
 
     for attempt in (1, 2):
