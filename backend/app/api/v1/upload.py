@@ -34,17 +34,23 @@ UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "/tmp/quant_uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
+import re
+
 def _clean_ticker(ticker: str) -> str:
-    """Remove .SA, strip, uppercase. PETR4.SA -> PETR4"""
-    return ticker.strip().upper().replace(".SA", "").replace(".sa", "")
+    """Remove .SA e converte para maiúsculas, sanitizando path traversal"""
+    raw = ticker.upper().replace(".SA", "")
+    clean = re.sub(r'[^A-Z0-9.]', '', raw)
+    return clean.strip()
 
 
 def _options_path(ticker: str) -> str:
-    return os.path.join(UPLOAD_DIR, f"{_clean_ticker(ticker)}_options.csv")
+    clean = os.path.basename(_clean_ticker(ticker))
+    return os.path.join(UPLOAD_DIR, f"{clean}_options.csv")
 
 
 def _ohlcv_path(ticker: str) -> str:
-    return os.path.join(UPLOAD_DIR, f"{_clean_ticker(ticker)}_ohlcv.csv")
+    clean = os.path.basename(_clean_ticker(ticker))
+    return os.path.join(UPLOAD_DIR, f"{clean}_ohlcv.csv")
 
 
 def _clean_col(c) -> str:
@@ -148,7 +154,15 @@ async def upload_options(
     file: UploadFile = File(...)
 ):
     clean = _clean_ticker(ticker)
+    
+    fname = (file.filename or '').lower()
+    if not fname.endswith(('.csv', '.xlsx', '.xls')):
+        raise HTTPException(400, "Formato não suportado. Apenas .csv, .xlsx, .xls")
+
     content = await file.read()
+    MAX_FILE_SIZE = 10 * 1024 * 1024 # 10MB
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(413, "Arquivo muito grande (limite 10MB)")
     try:
         df = _parse_options_b3(content, file.filename)
     except Exception as e:
@@ -186,8 +200,15 @@ async def upload_ohlcv(
     file: UploadFile = File(...)
 ):
     clean = _clean_ticker(ticker)
-    content = await file.read()
+    
     fname = (file.filename or '').lower()
+    if not fname.endswith(('.csv', '.xlsx', '.xls')):
+        raise HTTPException(400, "Formato não suportado. Apenas .csv, .xlsx, .xls")
+
+    content = await file.read()
+    MAX_FILE_SIZE = 10 * 1024 * 1024 # 10MB
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(413, "Arquivo muito grande (limite 10MB)")
     try:
         df = pd.read_csv(io.BytesIO(content)) if fname.endswith('.csv') \
              else pd.read_excel(io.BytesIO(content))

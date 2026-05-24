@@ -17,8 +17,10 @@ router = APIRouter()
 @limiter.limit("10/minute")
 async def get_summary(request: Request, ticker: str, rfr: Optional[float] = None, db: Session = Depends(get_db)):
     try:
+        brapi_token = request.headers.get("x-brapi-token")
+        hg_token = request.headers.get("x-hg-token")
         result_dict = await asyncio.wait_for(
-            asyncio.to_thread(run_cross_analysis, ticker, rfr),
+            asyncio.to_thread(run_cross_analysis, ticker, rfr, brapi_token, hg_token),
             timeout=55.0
         )
     except asyncio.TimeoutError:
@@ -85,7 +87,8 @@ async def get_watchlist_summary(request: Request, db: Session = Depends(get_db))
             watchlist_tickers.append(dt)
 
     # Busca cotacoes em batch via Brapi (substitui HG Brasil)
-    real_time_data = await asyncio.to_thread(fetch_multiple_quotes, watchlist_tickers)
+    brapi_token = request.headers.get("x-brapi-token")
+    real_time_data = await asyncio.to_thread(fetch_multiple_quotes, watchlist_tickers, brapi_token)
 
     results = []
     for ticker in watchlist_tickers:

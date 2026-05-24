@@ -10,7 +10,7 @@ let API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 if (API_BASE.endsWith('/')) {
   API_BASE = API_BASE.slice(0, -1);
 }
-const API_KEY = import.meta.env.VITE_API_KEY || 'quant-secret-key';
+const API_KEY = import.meta.env.VITE_API_KEY || '';
 
 type Tab = 'dashboard' | 'datasources'
 
@@ -42,8 +42,16 @@ function App() {
     try {
       let url = `${API_BASE}/v1/summary/${ticker}`
       if (rfrOverride !== null) url += `?rfr=${rfrOverride / 100}`
+      const brapiToken = localStorage.getItem('brapi_token') || '';
+      const hgKey = localStorage.getItem('hg_key') || '';
+      const customHeaders = {
+        'X-API-Key': API_KEY,
+        ...(brapiToken && { 'X-Brapi-Token': brapiToken }),
+        ...(hgKey && { 'X-HG-Token': hgKey })
+      };
+
       const res = await fetch(url, {
-        headers: { 'X-API-Key': API_KEY },
+        headers: customHeaders,
         signal: controller.signal,
       })
       if (res.ok) {
@@ -52,7 +60,7 @@ function App() {
         setErrorMsg(`API Error: ${res.status} ${res.statusText}`)
       }
       const histRes = await fetch(`${API_BASE}/v1/history/${ticker}?limit=10`, {
-        headers: { 'X-API-Key': API_KEY },
+        headers: customHeaders,
         signal: controller.signal,
       })
       if (histRes.ok) setHistory(await histRes.json())
@@ -72,7 +80,14 @@ function App() {
 
   const fetchWatchlist = async () => {
     try {
-      const res = await fetch(`${API_BASE}/v1/watchlist/summary`, { headers: { 'X-API-Key': API_KEY } })
+      const brapiToken = localStorage.getItem('brapi_token') || '';
+      const hgKey = localStorage.getItem('hg_key') || '';
+      const customHeaders = {
+        'X-API-Key': API_KEY,
+        ...(brapiToken && { 'X-Brapi-Token': brapiToken }),
+        ...(hgKey && { 'X-HG-Token': hgKey })
+      };
+      const res = await fetch(`${API_BASE}/v1/watchlist/summary`, { headers: customHeaders })
       if (res.ok) setTapeData(await res.json())
     } catch {}
   }
@@ -82,9 +97,17 @@ function App() {
     if (!newTicker.trim()) return
     setIsAdding(true)
     try {
+      const brapiToken = localStorage.getItem('brapi_token') || '';
+      const hgKey = localStorage.getItem('hg_key') || '';
+      const customHeaders = {
+        'Content-Type': 'application/json',
+        'X-API-Key': API_KEY,
+        ...(brapiToken && { 'X-Brapi-Token': brapiToken }),
+        ...(hgKey && { 'X-HG-Token': hgKey })
+      };
       await fetch(`${API_BASE}/v1/watchlist`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-API-Key': API_KEY },
+        headers: customHeaders,
         body: JSON.stringify({ ticker: newTicker.trim().toUpperCase() }),
       })
       setNewTicker('')
@@ -95,7 +118,14 @@ function App() {
 
   const handleRemoveTicker = async (ticker: string) => {
     try {
-      await fetch(`${API_BASE}/v1/watchlist/${ticker}`, { method: 'DELETE', headers: { 'X-API-Key': API_KEY } })
+      const brapiToken = localStorage.getItem('brapi_token') || '';
+      const hgKey = localStorage.getItem('hg_key') || '';
+      const customHeaders = {
+        'X-API-Key': API_KEY,
+        ...(brapiToken && { 'X-Brapi-Token': brapiToken }),
+        ...(hgKey && { 'X-HG-Token': hgKey })
+      };
+      await fetch(`${API_BASE}/v1/watchlist/${ticker}`, { method: 'DELETE', headers: customHeaders })
       await fetchWatchlist()
     } catch {}
   }

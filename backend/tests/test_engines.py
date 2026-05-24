@@ -7,9 +7,9 @@ from app.engines.markov_hedge_fund_method.regime import label_regimes, build_tra
 from app.engines.run_vol import get_vol_surface
 
 @pytest.mark.slow
-def test_data_fetcher_real_qqq():
-    # Test if we can successfully pull 1 year of real data for QQQ
-    df = fetch_ticker_data("QQQ", years=1)
+def test_data_fetcher_real_petr4():
+    # Test if we can successfully pull 1 year of real data for PETR4
+    df = fetch_ticker_data("PETR4", years=1)
     assert not df.empty, "Dataframe should not be empty"
     assert "Close" in df.columns, "Dataframe must contain 'Close' prices"
     assert len(df) > 200, "1 year of daily trading data should have around 250 rows"
@@ -36,7 +36,8 @@ def test_markov_engine_math(mock_10y_close_data):
 @pytest.mark.slow
 def test_vol_surface_real_msft():
     # Fetch real options chain for MSFT
-    vol_data = get_vol_surface("MSFT")
+    mock_df = pd.DataFrame({"Close": [400.0]})
+    vol_data = get_vol_surface("MSFT", df=mock_df)
     
     # Either returns a valid dictionary with metrics, or an error dictionary if expiration fails
     if "error" not in vol_data:
@@ -57,13 +58,15 @@ def test_vol_surface_real_msft():
 # MOCKED UNIT TESTS (FAST)
 # ==========================================
 
-@patch('app.engines.run_vol.yf.Ticker')
-def test_vol_surface_mocked(mock_ticker):
-    # Mock yfinance Ticker to return empty options to test fallback logic
-    # without hitting the network
-    instance = mock_ticker.return_value
+def test_vol_surface_mocked():
+    from unittest.mock import MagicMock
+    mock_yf = MagicMock()
+    instance = MagicMock()
     instance.options = ()
+    mock_yf.Ticker.return_value = instance
     
-    vol_data = get_vol_surface("FAKE")
-    assert "error" in vol_data
-    assert "Nenhuma cadeia de" in vol_data["error"]
+    with patch.dict('sys.modules', {'yfinance': mock_yf}):
+        mock_df = pd.DataFrame({"Close": [10.0]})
+        vol_data = get_vol_surface("FAKE", df=mock_df)
+        assert "error" in vol_data
+        assert "no_options_chain" in vol_data["error"]

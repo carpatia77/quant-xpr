@@ -7,7 +7,7 @@ from app.core.config import settings
 
 logger = structlog.get_logger(__name__)
 
-def run_cross_analysis(ticker: str, custom_rfr: float = None):
+def run_cross_analysis(ticker: str, custom_rfr: float = None, brapi_token: str = None, hg_token: str = None):
     # --- Risk-free rate ---
     risk_free_rate = 0.0
     risk_free_rate_source = "Zero (International Asset)"
@@ -21,7 +21,7 @@ def run_cross_analysis(ticker: str, custom_rfr: float = None):
     # --- Historical OHLCV via Brapi ---
     df = None
     try:
-        df = fetch_ticker_data(ticker, years=1)
+        df = fetch_ticker_data(ticker, years=1, brapi_token=brapi_token)
     except Exception as e:
         logger.error("data_fetcher_failed", ticker=ticker, error=str(e))
 
@@ -86,7 +86,7 @@ def run_cross_analysis(ticker: str, custom_rfr: float = None):
         signal = f"error_{markov_status[:30]}"
 
     # --- Spot price + metadata via Brapi quote ---
-    quote = fetch_quote(ticker)
+    quote = fetch_quote(ticker, brapi_token=brapi_token)
     spot_price = quote.get("price") or (float(df["Close"].iloc[-1]) if df is not None and not df.empty else 0.0)
 
     return {

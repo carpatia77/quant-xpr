@@ -5,14 +5,18 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://user:pass@db:5432/quantdb
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-pass}@db:5432/${POSTGRES_DB:-quantdb}
+      - API_KEY=${API_KEY:-quant-secret-key}
+      - BRAPI_TOKEN=${BRAPI_TOKEN:-fake_token}
+    volumes:
+      - ./uploads:/tmp/quant_uploads
     depends_on:
       - db
   db:
     image: postgres:15
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: pass
-      POSTGRES_DB: quantdb
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pass}
+      POSTGRES_DB: ${POSTGRES_DB:-quantdb}
     ports:
       - "5432:5432"

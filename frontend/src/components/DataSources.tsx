@@ -25,7 +25,11 @@ export default function DataSources({ apiBase, apiKey }: Props) {
   const optionsRef = useRef<HTMLInputElement>(null)
   const ohlcvRef   = useRef<HTMLInputElement>(null)
 
-  const headers = { 'X-API-Key': apiKey }
+  const headers = { 
+    'X-API-Key': apiKey,
+    ...(brapiKey && { 'X-Brapi-Token': brapiKey }),
+    ...(hgKey && { 'X-HG-Token': hgKey })
+  }
 
   // Usa ticker sem .SA nas rotas de upload para evitar problema de path param
   const cleanTicker = (t: string) => t.replace('.SA', '').replace('.sa', '')

@@ -51,7 +51,7 @@ def _load_ohlcv_from_file(ticker: str) -> pd.DataFrame | None:
         return None
 
 
-def fetch_ticker_data(ticker: str, years: int = 1) -> pd.DataFrame:
+def fetch_ticker_data(ticker: str, years: int = 1, brapi_token: str = None) -> pd.DataFrame:
     """
     1. Tenta arquivo local (upload manual)
     2. Fallback: Brapi API
@@ -71,7 +71,7 @@ def fetch_ticker_data(ticker: str, years: int = 1) -> pd.DataFrame:
                 "range": rng,
                 "interval": "1d",
                 "fundamental": "false",
-                "token": settings.BRAPI_TOKEN,
+                "token": brapi_token or settings.BRAPI_TOKEN,
             }
             resp = requests.get(url, params=params, timeout=_TIMEOUT)
             resp.raise_for_status()
@@ -103,7 +103,7 @@ def fetch_ticker_data(ticker: str, years: int = 1) -> pd.DataFrame:
     raise RuntimeError(f"Sem dados para {ticker}. Faça upload do OHLCV via /v1/upload/ohlcv/{ticker}. Erro Brapi: {last_error}")
 
 
-def fetch_quote(ticker: str) -> dict:
+def fetch_quote(ticker: str, brapi_token: str = None) -> dict:
     """Cotação atual via Brapi. Cache de 1 min."""
     clean = _clean(ticker)
     cached = _QUOTE_CACHE.get(clean)
@@ -111,7 +111,7 @@ def fetch_quote(ticker: str) -> dict:
         return cached["data"]
     try:
         url = f"{BRAPI_BASE}/quote/{clean}"
-        params = {"token": settings.BRAPI_TOKEN, "fundamental": "false"}
+        params = {"token": brapi_token or settings.BRAPI_TOKEN, "fundamental": "false"}
         resp = requests.get(url, params=params, timeout=_TIMEOUT)
         resp.raise_for_status()
         payload = resp.json()
@@ -132,7 +132,7 @@ def fetch_quote(ticker: str) -> dict:
         return {}
 
 
-def fetch_multiple_quotes(tickers: list[str]) -> dict:
+def fetch_multiple_quotes(tickers: list[str], brapi_token: str = None) -> dict:
     """Cotações em batch via Brapi."""
     if not tickers:
         return {}
@@ -140,7 +140,7 @@ def fetch_multiple_quotes(tickers: list[str]) -> dict:
     symbols = ",".join(clean_tickers)
     try:
         url = f"{BRAPI_BASE}/quote/{symbols}"
-        params = {"token": settings.BRAPI_TOKEN, "fundamental": "false"}
+        params = {"token": brapi_token or settings.BRAPI_TOKEN, "fundamental": "false"}
         resp = requests.get(url, params=params, timeout=_TIMEOUT)
         resp.raise_for_status()
         payload = resp.json()
