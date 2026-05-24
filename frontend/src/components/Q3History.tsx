@@ -34,25 +34,32 @@ export default function Q3History({ data }: Q3HistoryProps) {
       },
     });
 
-    const candlestickSeries = (chart as any).addCandlestickSeries({
-      upColor: '#00d4aa',
-      downColor: '#ff4757',
-      borderVisible: false,
-      wickUpColor: '#00d4aa',
-      wickDownColor: '#ff4757',
+    const areaSeries = chart.addAreaSeries({
+      lineColor: '#00d4aa',
+      topColor: 'rgba(0, 212, 170, 0.4)',
+      bottomColor: 'rgba(0, 212, 170, 0.0)',
     });
 
     // Format data for lightweight-charts
-    // Assuming data.regime_history has: time, open, high, low, close, regime
     const seriesData = data.regime_history.map((d: any) => ({
-      time: d.time,
-      open: d.open,
-      high: d.high,
-      low: d.low,
-      close: d.close,
+      time: d.date,
+      value: d.price,
     }));
 
-    candlestickSeries.setData(seriesData);
+    areaSeries.setData(seriesData);
+
+    const markers: any[] = [];
+    data.regime_history.forEach((d: any, index: number) => {
+      // Add marker only when regime changes to avoid clutter
+      if (index === 0 || data.regime_history[index - 1].regime !== d.regime) {
+        if (d.regime === 2) {
+          markers.push({ time: d.date, position: 'belowBar', color: '#00d4aa', shape: 'arrowUp', text: 'BULL' });
+        } else if (d.regime === 0) {
+          markers.push({ time: d.date, position: 'aboveBar', color: '#ff4757', shape: 'arrowDown', text: 'BEAR' });
+        }
+      }
+    });
+    areaSeries.setMarkers(markers);
 
     // Fit content
     chart.timeScale().fitContent();
