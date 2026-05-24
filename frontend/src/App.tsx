@@ -7,26 +7,6 @@ import TickerTape, { TickerData } from './components/TickerTape'
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-// Helper to generate mock candlestick data
-function generateMockRegimeHistory() {
-  const data = [];
-  let currentPrice = 100;
-  const now = new Date();
-  now.setUTCHours(0, 0, 0, 0);
-
-  for (let i = 100; i >= 0; i--) {
-    const time = new Date(now.getTime() - i * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    const open = currentPrice + (Math.random() - 0.5) * 2;
-    const close = open + (Math.random() - 0.5) * 4;
-    const high = Math.max(open, close) + Math.random() * 2;
-    const low = Math.min(open, close) - Math.random() * 2;
-    currentPrice = close;
-    
-    data.push({ time, open, high, low, close });
-  }
-  return data;
-}
-
 
 
 function App() {
@@ -34,9 +14,41 @@ function App() {
   const [history, setHistory] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
-  const [tapeData, setTapeData] = useState<TickerData[]>([])
-  const [newTicker, setNewTicker] = useState('')
-  const [isAdding, setIsAdding] = useState(false)
+  const [selectedTicker, setSelectedTicker] = useState<string>(() => {
+    const params = new URLSearchParams(window.location.search)
+    return params.get('ticker') || 'PETR4.SA'
+  })
+
+  const fetchSummary = async (ticker: string) => {
+    setLoading(true)
+    try {
+      const res = await fetch(`${API_BASE}/v1/summary/${ticker}`, {
+        headers: { 'X-API-Key': 'quant-secret-key' }
+      })
+      if (res.ok) {
+        const json = await res.json()
+        setData(json)
+      }
+      
+      const historyRes = await fetch(`${API_BASE}/v1/history/${ticker}?limit=10`, {
+        headers: { 'X-API-Key': 'quant-secret-key' }
+      })
+      if (historyRes.ok) {
+        const historyJson = await historyRes.json()
+        setHistory(historyJson)
+      }
+    } catch (e) {
+      console.error("Failed to fetch summary for", ticker, e)
+    }
+    setLoading(false)
+  }
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    params.set('ticker', selectedTicker)
+    window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`)
+    fetchSummary(selectedTicker)
+  }, [selectedTicker])
 
   const fetchWatchlist = async () => {
     try {
@@ -88,47 +100,13 @@ function App() {
   useEffect(() => {
     fetchWatchlist()
     const interval = setInterval(fetchWatchlist, 10000) // Poll every 10s
-
-    // Mocking an API call for now to build the UI structure for the main quadrats
-    setTimeout(() => {
-      setData({
-        ticker: "PETR4.SA",
-        signal: "RISK_REVERSAL",
-        markov_bull_prob: 0.85,
-        markov_bear_prob: 0.05,
-        iv_atm: 0.28,
-        skew: 0.045,
-        risk_free_rate: 0.144,
-        smile_data: [
-          { strike: 30, impliedVolatility: 0.35 },
-          { strike: 32, impliedVolatility: 0.31 },
-          { strike: 34, impliedVolatility: 0.29 },
-          { strike: 36, impliedVolatility: 0.28 }, // ATM approx
-          { strike: 38, impliedVolatility: 0.285 },
-          { strike: 40, impliedVolatility: 0.32 },
-          { strike: 42, impliedVolatility: 0.38 },
-        ],
-        regime_history: generateMockRegimeHistory()
-      })
-
-      setHistory([
-        { timestamp: new Date().toISOString(), ticker: "PETR4.SA", signal: "RISK_REVERSAL", markov_bull_prob: 0.85, skew: 0.045 },
-        { timestamp: new Date(Date.now() - 86400000).toISOString(), ticker: "VALE3.SA", signal: "short_vol", markov_bull_prob: 0.35, skew: -0.02 },
-        { timestamp: new Date(Date.now() - 172800000).toISOString(), ticker: "ITUB4.SA", signal: "neutral", markov_bull_prob: 0.50, skew: 0.01 },
-        { timestamp: new Date(Date.now() - 259200000).toISOString(), ticker: "PETR4.SA", signal: "long_vol", markov_bull_prob: 0.70, skew: 0.03 },
-        { timestamp: new Date(Date.now() - 345600000).toISOString(), ticker: "BBDC4.SA", signal: "error_fetching", markov_bull_prob: 0.00, skew: 0.00 },
-      ])
-      
-      setLoading(false)
-    }, 800)
-
     return () => clearInterval(interval)
   }, [])
 
   return (
     <div className="h-screen w-screen bg-background flex flex-col overflow-hidden">
       {/* Ticker Tape */}
-      <TickerTape items={tapeData} onRemove={handleRemoveTicker} />
+      <TickerTape items={tapeData} onRemove={handleRemoveTicker} onClickTicker={(ticker) => setSelectedTicker(ticker)} />
 
       <div className="flex-1 flex flex-col p-2 min-h-0">
         <header className="flex items-center justify-between border-b border-border pb-2 mb-2 shrink-0">

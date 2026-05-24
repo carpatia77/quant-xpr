@@ -9,9 +9,10 @@ export interface TickerData {
 interface TickerTapeProps {
   items: TickerData[];
   onRemove?: (ticker: string) => void;
+  onClickTicker?: (ticker: string) => void;
 }
 
-export default function TickerTape({ items, onRemove }: TickerTapeProps) {
+export default function TickerTape({ items, onRemove, onClickTicker }: TickerTapeProps) {
   if (!items || items.length === 0) return (
     <div className="w-full bg-[#0A0E17] border-b border-border py-1.5 flex items-center justify-center text-xs text-muted-foreground shrink-0">
       Watchlist is empty
@@ -38,7 +39,10 @@ export default function TickerTape({ items, onRemove }: TickerTapeProps) {
 
           return (
             <div key={index} className="flex items-center gap-2 px-6 border-r border-border/30 last:border-0 shrink-0 group">
-              <span className="font-bold text-xs tracking-widest text-foreground">
+              <span 
+                className="font-bold text-xs tracking-widest text-foreground cursor-pointer hover:text-accent transition-colors"
+                onClick={() => onClickTicker && onClickTicker(item.ticker)}
+              >
                 {item.ticker}
               </span>
               <Icon size={14} className={colorClass} />
