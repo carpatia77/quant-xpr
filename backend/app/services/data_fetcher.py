@@ -15,6 +15,7 @@ def fetch_ticker_data(ticker: str, years: int = 10) -> pd.DataFrame:
                 end=end.strftime("%Y-%m-%d"),
                 progress=False,
                 auto_adjust=True,
+                timeout=8,
             )
         except Exception as exc:
             print(f"  ! yfinance error on attempt {attempt}: {exc}")
@@ -26,8 +27,8 @@ def fetch_ticker_data(ticker: str, years: int = 10) -> pd.DataFrame:
             return df
 
         if attempt == 1:
-            print(f"  ! yfinance returned empty data — retrying in {5 * attempt}s.")
-            time.sleep(5 * attempt)
+            print(f"  ! yfinance returned empty data — retrying in 2s.")
+            time.sleep(2)
 
     raise RuntimeError(
         f"yfinance returned empty data for {ticker} after retry. "

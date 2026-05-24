@@ -16,7 +16,7 @@ async def get_summary(request: Request, ticker: str, db: Session = Depends(get_d
         # and enforce a maximum execution time of 15 seconds
         result_dict = await asyncio.wait_for(
             asyncio.to_thread(run_cross_analysis, ticker), 
-            timeout=15.0
+            timeout=25.0
         )
     except asyncio.TimeoutError:
         raise HTTPException(status_code=504, detail="Engine analysis timed out")

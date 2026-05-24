@@ -12,8 +12,14 @@ def run_cross_analysis(ticker: str):
         risk_free_rate = get_selic_anual()
         risk_free_rate_source = "BCB SGS 11 (Selic Over)"
 
+    # Fetch ticker data once for both Vol and Markov
+    try:
+        df = fetch_ticker_data(ticker, years=10)
+    except Exception as e:
+        df = None
+
     # Get Volatility Data using Forward Adjustment
-    vol_data = get_vol_surface(ticker, risk_free_rate)
+    vol_data = get_vol_surface(ticker, risk_free_rate, df=df)
     
     # Extract metrics
     if "error" in vol_data:
@@ -31,7 +37,8 @@ def run_cross_analysis(ticker: str):
 
     # Get Markov Data
     try:
-        df = fetch_ticker_data(ticker, years=10)
+        if df is None:
+            raise ValueError("No historical data available")
         close = df["Close"].dropna()
         labels = label_regimes(close, window=20, threshold=0.02)
         P = build_transition_matrix(labels)

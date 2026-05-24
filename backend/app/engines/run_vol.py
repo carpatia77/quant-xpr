@@ -6,10 +6,13 @@ import math
 from datetime import datetime
 import sys
 
-def get_vol_surface(ticker_symbol: str, risk_free_rate: float = 0.0):
+def get_vol_surface(ticker_symbol: str, risk_free_rate: float = 0.0, df: pd.DataFrame = None):
     tk = yf.Ticker(ticker_symbol)
     try:
-        current_price = tk.history(period="1d")['Close'].iloc[-1]
+        if df is not None and not df.empty:
+            current_price = df['Close'].iloc[-1]
+        else:
+            current_price = tk.history(period="1d")['Close'].iloc[-1]
         expirations = tk.options
         if not expirations:
             return {"error": "Nenhuma cadeia de opções encontrada."}
