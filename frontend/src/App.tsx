@@ -14,6 +14,11 @@ function App() {
   const [data, setData] = useState<any>(null)
   const [history, setHistory] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+
+  const [tapeData, setTapeData] = useState<TickerData[]>([])
+  const [newTicker, setNewTicker] = useState('')
+  const [isAdding, setIsAdding] = useState(false)
 
   const [selectedTicker, setSelectedTicker] = useState<string>(() => {
     const params = new URLSearchParams(window.location.search)
@@ -22,6 +27,7 @@ function App() {
 
   const fetchSummary = async (ticker: string) => {
     setLoading(true)
+    setErrorMsg(null)
     try {
       const res = await fetch(`${API_BASE}/v1/summary/${ticker}`, {
         headers: { 'X-API-Key': API_KEY }
@@ -29,6 +35,8 @@ function App() {
       if (res.ok) {
         const json = await res.json()
         setData(json)
+      } else {
+        setErrorMsg(`API Error: ${res.status} ${res.statusText}`)
       }
       
       const historyRes = await fetch(`${API_BASE}/v1/history/${ticker}?limit=10`, {
@@ -38,8 +46,9 @@ function App() {
         const historyJson = await historyRes.json()
         setHistory(historyJson)
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error("Failed to fetch summary for", ticker, e)
+      setErrorMsg(e.message || "Network connection failed")
     }
     setLoading(false)
   }
@@ -141,6 +150,10 @@ function App() {
       {loading ? (
         <div className="flex-1 flex items-center justify-center text-accent animate-pulse font-bold tracking-widest">
           INITIALIZING QUADRANTS...
+        </div>
+      ) : errorMsg ? (
+        <div className="flex-1 flex items-center justify-center text-bear font-bold tracking-widest">
+          SYSTEM ERROR: {errorMsg}
         </div>
       ) : (
         <div className="flex-1 grid grid-cols-2 grid-rows-2 gap-2 min-h-0">
