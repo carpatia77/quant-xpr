@@ -4,6 +4,8 @@ export interface TickerData {
   ticker: string;
   signal: string;
   iv_atm: number;
+  price?: number;
+  change_percent?: number;
 }
 
 interface TickerTapeProps {
@@ -26,16 +28,19 @@ export default function TickerTape({ items, onRemove, onClickTicker }: TickerTap
     <div className="w-full bg-[#0A0E17] border-b border-border overflow-hidden py-1.5 flex items-center shrink-0">
       <div className="flex w-max animate-marquee hover:[animation-play-state:paused]">
         {repeatedItems.map((item, index) => {
-          let colorClass = "text-muted-foreground";
+          let signalColor = "text-muted-foreground";
           let Icon = Minus;
 
           if (item.signal === "RISK_REVERSAL" || item.signal === "long_vol") {
-            colorClass = "text-bull";
+            signalColor = "text-bull";
             Icon = TrendingUp;
           } else if (item.signal === "short_vol") {
-            colorClass = "text-bear";
+            signalColor = "text-bear";
             Icon = TrendingDown;
           }
+
+          const hasMarketData = item.price !== undefined && item.price > 0;
+          const changeColor = item.change_percent !== undefined && item.change_percent >= 0 ? "text-bull" : "text-bear";
 
           return (
             <div key={index} className="flex items-center gap-2 px-6 border-r border-border/30 last:border-0 shrink-0 group">
@@ -45,8 +50,22 @@ export default function TickerTape({ items, onRemove, onClickTicker }: TickerTap
               >
                 {item.ticker}
               </span>
-              <Icon size={14} className={colorClass} />
-              <span className={`text-xs font-bold ${colorClass}`}>
+
+              {hasMarketData && (
+                <span className="text-xs font-bold text-foreground">
+                  R$ {item.price?.toFixed(2)}
+                </span>
+              )}
+              {hasMarketData && item.change_percent !== undefined && (
+                <span className={`text-xs font-bold ${changeColor}`}>
+                  {item.change_percent >= 0 ? "+" : ""}{item.change_percent.toFixed(2)}%
+                </span>
+              )}
+
+              <span className="text-muted-foreground/30 mx-1">|</span>
+
+              <Icon size={14} className={signalColor} />
+              <span className={`text-xs font-bold ${signalColor}`}>
                 {item.signal.replace(/_/g, " ")}
               </span>
               <span className="text-xs text-accent tracking-widest ml-1">

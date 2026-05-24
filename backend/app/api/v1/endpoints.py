@@ -52,6 +52,7 @@ async def get_assets(request: Request, db: Session = Depends(get_db)):
 
 from pydantic import BaseModel
 from app.db.models import WatchlistItem
+from app.services.hg_brasil import fetch_multiple_stock_quotes
 
 class WatchlistCreate(BaseModel):
     ticker: str
@@ -90,13 +91,19 @@ async def get_watchlist_summary(request: Request, db: Session = Depends(get_db))
     Returns the latest AnalysisResult for each ticker in the watchlist.
     Useful for the frontend TickerTape.
     """
-    watchlist_tickers = [item.ticker for item in db.query(WatchlistItem).all()]
+    watchlist_tickers = [item.ticker for item in db.query(WatchlistItem).order_by(WatchlistItem.added_at.asc()).all()]
     if not watchlist_tickers:
         return []
+        
+    # Fetch real-time broad data for all tickers at once from HG Brasil
+    real_time_data = fetch_multiple_stock_quotes(watchlist_tickers)
         
     results = []
     for ticker in watchlist_tickers:
         latest = db.query(AnalysisResult).filter(AnalysisResult.ticker == ticker).order_by(AnalysisResult.timestamp.desc()).first()
+        clean_ticker = ticker.replace('.SA', '')
+        broad = real_time_data.get(clean_ticker, {})
+        
         if latest:
             results.append({
                 "ticker": latest.ticker,
@@ -105,7 +112,10 @@ async def get_watchlist_summary(request: Request, db: Session = Depends(get_db))
                 "skew": latest.skew,
                 "risk_free_rate": latest.risk_free_rate,
                 "markov_bull_prob": latest.markov_bull_prob,
-                "markov_bear_prob": latest.markov_bear_prob
+                "markov_bear_prob": latest.markov_bear_prob,
+                "price": broad.get("price", 0.0),
+                "change_percent": broad.get("change_percent", 0.0),
+                "company_name": broad.get("company_name", ticker)
             })
         else:
             results.append({
@@ -115,6 +125,9 @@ async def get_watchlist_summary(request: Request, db: Session = Depends(get_db))
                 "skew": 0.0,
                 "risk_free_rate": 0.0,
                 "markov_bull_prob": 0.0,
-                "markov_bear_prob": 0.0
+                "markov_bear_prob": 0.0,
+                "price": broad.get("price", 0.0),
+                "change_percent": broad.get("change_percent", 0.0),
+                "company_name": broad.get("company_name", ticker)
             })
     return results
