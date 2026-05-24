@@ -95,7 +95,17 @@ def _load_options_from_file(ticker: str, current_price: float, risk_free_rate: f
 
         # Skew: put OTM - call OTM
         otm_calls = calls[calls["strike"] > forward * 1.05]
+        if otm_calls.empty:
+            otm_calls = calls[calls["strike"] > forward * 1.02]
+        if otm_calls.empty:
+            otm_calls = calls[calls["strike"] > forward]
+
         otm_puts  = puts[puts["strike"]  < forward * 0.95]
+        if otm_puts.empty:
+            otm_puts = puts[puts["strike"] < forward * 0.98]
+        if otm_puts.empty:
+            otm_puts = puts[puts["strike"] < forward]
+
         otm_call_iv_avg = otm_calls["iv"].mean() if not otm_calls.empty else atm_iv
         otm_put_iv_avg  = otm_puts["iv"].mean()  if not otm_puts.empty  else atm_iv
         skew = otm_put_iv_avg - otm_call_iv_avg
