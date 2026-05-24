@@ -34,16 +34,17 @@ export default function TickerTape({ items, onRemove, onClickTicker }: TickerTap
     <div className="w-full bg-[#0A0E17] border-b border-border overflow-hidden py-1.5 flex items-center shrink-0">
       <div className="flex w-max animate-marquee hover:[animation-play-state:paused]">
         {repeatedItems.map((item, index) => {
-          let signalColor = "text-muted-foreground";
-          let Icon = Minus;
-
-          if (item.signal === "RISK_REVERSAL" || item.signal === "long_vol") {
-            signalColor = "text-bull";
-            Icon = TrendingUp;
-          } else if (item.signal === "short_vol") {
-            signalColor = "text-bear";
-            Icon = TrendingDown;
-          }
+          const sig = item.signal ? item.signal.toLowerCase() : "";
+          const isBull = sig === "risk_reversal" || sig === "long_vol" || sig === "directional_bull";
+          const isBear = sig.includes("bear");
+          
+          const signalColor = sig === "error_fetching_data" || sig === "waiting_data" 
+            ? "text-muted-foreground"
+            : isBull ? "text-bull" : isBear ? "text-bear" : "text-foreground";
+          
+          const Icon = sig === "error_fetching_data" || sig === "waiting_data"
+            ? Activity 
+            : isBull ? TrendingUp : TrendingDown;
 
           const hasMarketData = item.price !== undefined && item.price > 0;
           const changeColor = item.change_percent !== undefined && item.change_percent >= 0 ? "text-bull" : "text-bear";

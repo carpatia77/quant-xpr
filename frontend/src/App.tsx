@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import Q1Signal from './components/Q1Signal'
 import Q2Smile from './components/Q2Smile'
 import Q3History from './components/Q3History'
@@ -62,10 +62,20 @@ function App() {
     setLoading(false)
   }
 
+  const prevRfrRef = useRef(customRfr);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     params.set('ticker', selectedTicker)
     window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`)
+    
+    if (prevRfrRef.current === customRfr && prevRfrRef.current === null && selectedTicker === params.get('ticker')) {
+      // It's tricky to guard perfectly here without missing a legitimate ticker change, 
+      // but preventing double fetch when user cancels RFR editing is the goal.
+      // Actually, since we want to allow normal refetch when ticker changes:
+    }
+    prevRfrRef.current = customRfr;
+
     fetchSummary(selectedTicker, customRfr)
   }, [selectedTicker, customRfr])
 

@@ -12,7 +12,8 @@ export default function Q1Signal({ data, onOverrideRfr }: Q1SignalProps) {
 
   if (!data) return <div className="h-full flex items-center justify-center text-muted-foreground animate-pulse">Awaiting Data...</div>;
 
-  const isBull = data.signal === "RISK_REVERSAL" || data.signal === "long_vol";
+  const sig = data.signal ? data.signal.toLowerCase() : "";
+  const isBull = sig === "risk_reversal" || sig === "long_vol" || sig === "directional_bull";
 
   const handleRfrSubmit = () => {
     const val = parseFloat(rfrInput);

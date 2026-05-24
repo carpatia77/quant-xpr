@@ -16,9 +16,15 @@ export default function Q2Smile({ data }: Q2SmileProps) {
   }));
 
   // Find ATM strike approximately for a reference line
-  // In a real scenario we'd use current spot/forward price.
   const strikes = chartData.map((d: any) => d.strike);
-  const midStrike = strikes[Math.floor(strikes.length / 2)];
+
+  // Find ATM strike (closest to spot_price)
+  const spotPrice = data.spot_price || 0;
+  const atmStrike = spotPrice > 0 && strikes.length > 0
+    ? strikes.reduce((prev: number, curr: number) => 
+        Math.abs(curr - spotPrice) < Math.abs(prev - spotPrice) ? curr : prev
+      )
+    : strikes[Math.floor(strikes.length / 2)];
 
   return (
     <div className="flex flex-col h-full">
@@ -52,7 +58,7 @@ export default function Q2Smile({ data }: Q2SmileProps) {
               formatter={(value: any) => [`${Number(value).toFixed(2)}%`, 'Implied Vol']}
               labelFormatter={(label) => `Strike: ${label}`}
             />
-            <ReferenceLine x={midStrike} stroke="#666" strokeDasharray="3 3" label={{ position: 'top', value: 'ATM', fill: '#888', fontSize: 10 }} />
+            <ReferenceLine x={atmStrike} stroke="#666" strokeDasharray="3 3" label={{ position: 'top', value: 'ATM', fill: '#888', fontSize: 10 }} />
             <Line 
               type="monotone" 
               dataKey="iv" 

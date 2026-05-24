@@ -43,7 +43,8 @@ export default function Q4Table({ historyData }: Q4TableProps) {
           </thead>
           <tbody>
             {filtered.map((row, i) => {
-              const isBull = row.signal === "RISK_REVERSAL" || row.signal === "long_vol";
+              const sig = row.signal ? row.signal.toLowerCase() : "";
+              const isBull = sig === "risk_reversal" || sig === "long_vol" || sig === "directional_bull";
               return (
                 <tr key={i} className="border-b border-border/50 hover:bg-white/5 transition-colors">
                   <td className="px-3 py-2 text-muted-foreground">{new Date(row.timestamp).toISOString().replace('T', ' ').slice(0, 19)}</td>

@@ -4,4 +4,7 @@ __pycache__/
 .env
 *.sqlite
 *.db
+*.tsbuildinfo 
+# Coverage and build artifacts
+.coverage
 *.tsbuildinfo
