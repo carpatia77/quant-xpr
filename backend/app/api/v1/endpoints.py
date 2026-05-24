@@ -102,8 +102,10 @@ async def get_watchlist_summary(request: Request, db: Session = Depends(get_db))
     for dt in default_tickers:
         if dt not in watchlist_tickers:
             watchlist_tickers.append(dt)
-    # Fetch real-time broad data for all tickers at once from HG Brasil
-    real_time_data = fetch_multiple_stock_quotes(watchlist_tickers)
+            
+    # Fetch real-time broad data for all tickers at once from HG Brasil (offload blocking sync call to thread)
+    import asyncio
+    real_time_data = await asyncio.to_thread(fetch_multiple_stock_quotes, watchlist_tickers)
         
     results = []
     for ticker in watchlist_tickers:
