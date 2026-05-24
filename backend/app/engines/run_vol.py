@@ -6,7 +6,9 @@ import math
 from datetime import datetime
 import sys
 
-def get_vol_surface(ticker_symbol: str, risk_free_rate: float = 0.0, df: pd.DataFrame = None):
+import concurrent.futures
+
+def _get_vol_surface_impl(ticker_symbol: str, risk_free_rate: float = 0.0, df: pd.DataFrame = None):
     tk = yf.Ticker(ticker_symbol)
     try:
         if df is not None and not df.empty:
@@ -96,6 +98,17 @@ def get_vol_surface(ticker_symbol: str, risk_free_rate: float = 0.0, df: pd.Data
         }
     except Exception as e:
         return {"error": str(e)}
+
+def get_vol_surface(ticker_symbol: str, risk_free_rate: float = 0.0, df: pd.DataFrame = None):
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+        future = executor.submit(_get_vol_surface_impl, ticker_symbol, risk_free_rate, df)
+        try:
+            return future.result(timeout=8.0)
+        except concurrent.futures.TimeoutError:
+            import structlog
+            logger = structlog.get_logger(__name__)
+            logger.warning("vol_surface_timeout", ticker=ticker_symbol, msg="yfinance options fetching timed out after 8s")
+            return {"error": "timeout"}
 
 def main():
     parser = argparse.ArgumentParser()
