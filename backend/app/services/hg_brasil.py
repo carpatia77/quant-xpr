@@ -1,8 +1,14 @@
 import httpx
 import structlog
+import time
 from app.core.config import settings
 
 logger = structlog.get_logger(__name__)
+
+# 15 minutes = 900 seconds cache to respect 400 requests/day limit
+CACHE_DURATION = 900
+_hg_cache_single = {}
+_hg_cache_multiple = {}
 
 def fetch_stock_quote(ticker: str) -> dict:
     """
@@ -13,9 +19,13 @@ def fetch_stock_quote(ticker: str) -> dict:
         logger.warning("hg_brasil_api_key_missing", msg="HG_BRASIL_API_KEY is not configured, skipping broad data fetch.")
         return {}
 
-    # For HG Brasil, B3 tickers usually don't need the .SA suffix, or they can take it.
-    # HG Brasil accepts 'PETR4' or 'B3:PETR4'. If it has .SA, we might want to strip it.
     clean_ticker = ticker.replace('.SA', '')
+    
+    # Check cache
+    if clean_ticker in _hg_cache_single:
+        entry = _hg_cache_single[clean_ticker]
+        if time.time() - entry["ts"] < CACHE_DURATION:
+            return entry["data"]
 
     url = "https://api.hgbrasil.com/finance/stock_price"
     params = {
@@ -24,33 +34,32 @@ def fetch_stock_quote(ticker: str) -> dict:
     }
 
     try:
-        # 8-second timeout, same as the others
         with httpx.Client(timeout=8.0) as client:
             response = client.get(url, params=params)
             response.raise_for_status()
             data = response.json()
 
-        # Check if the API returned valid data
         if not data.get("valid_key"):
             logger.error("hg_brasil_invalid_key", error=data.get("errors", "Unknown key error"))
             return {}
 
         results = data.get("results", {})
-        
-        # HG Brasil returns a dictionary where the ticker is the key: {"PETR4": {"name": ...}}
         ticker_data = results.get(clean_ticker.upper(), {})
         
-        # In case it returned an error object inside results (e.g., symbol not found)
         if ticker_data.get("error"):
             logger.warning("hg_brasil_symbol_error", ticker=ticker, msg=ticker_data.get("message"))
             return {}
 
-        return {
+        final_data = {
             "company_name": ticker_data.get("company_name", ticker_data.get("name", "")),
             "price": ticker_data.get("price", 0.0),
             "change_percent": ticker_data.get("change_percent", 0.0),
             "market_cap": ticker_data.get("market_cap", 0.0)
         }
+        
+        # Save to cache
+        _hg_cache_single[clean_ticker] = {"data": final_data, "ts": time.time()}
+        return final_data
 
     except Exception as exc:
         logger.warning("hg_brasil_fetch_error", ticker=ticker, error=str(exc))
@@ -64,9 +73,16 @@ def fetch_multiple_stock_quotes(tickers: list[str]) -> dict:
     if not settings.HG_BRASIL_API_KEY or not tickers:
         return {}
 
-    # Clean and format tickers for HG Brasil (e.g., 'PETR4' instead of 'PETR4.SA')
-    # and prefix with 'B3:' if they are Brazilian stocks, though HG Brasil often accepts just the symbol.
     clean_tickers = [t.replace('.SA', '') for t in tickers]
+    # Sort so the cache key is deterministic
+    cache_key = ",".join(sorted(clean_tickers))
+    
+    # Check cache
+    if cache_key in _hg_cache_multiple:
+        entry = _hg_cache_multiple[cache_key]
+        if time.time() - entry["ts"] < CACHE_DURATION:
+            return entry["data"]
+
     tickers_str = ",".join(clean_tickers)
 
     url = "https://api.hgbrasil.com/finance/stock_price"
@@ -97,6 +113,8 @@ def fetch_multiple_stock_quotes(tickers: list[str]) -> dict:
                     "market_cap": ticker_data.get("market_cap", 0.0)
                 }
 
+        # Save to cache
+        _hg_cache_multiple[cache_key] = {"data": parsed_results, "ts": time.time()}
         return parsed_results
 
     except Exception as exc:
