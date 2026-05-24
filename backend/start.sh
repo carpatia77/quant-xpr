@@ -1,5 +1,6 @@
 #!/bin/bash
 set -x
+echo "DATABASE_URL is: $DATABASE_URL"
 echo "Running migrations..."
 alembic upgrade head
 echo "Starting Uvicorn on port ${PORT:-8000}..."
