@@ -28,6 +28,7 @@ async def get_summary(request: Request, ticker: str, db: Session = Depends(get_d
         markov_bear_prob=result_dict["markov_bear_prob"],
         iv_atm=result_dict["iv_atm"],
         skew=result_dict["skew"],
+        risk_free_rate=result_dict.get("risk_free_rate"),
         signal=result_dict["signal"],
         status=result_dict["status"]
     )

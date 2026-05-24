@@ -9,6 +9,8 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      API_KEY: ${{ secrets.API_KEY || 'quant-secret-key' }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -27,8 +29,6 @@ jobs:
           uv pip install -r requirements.txt --system
         
       - name: Run Unit Tests (Pytest)
-        env:
-          API_KEY: ${{ secrets.API_KEY }}
         run: |
           cd backend
           PYTHONPATH=. pytest tests/ -m "not slow" --cov=app --cov-report=xml
