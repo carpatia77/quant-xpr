@@ -42,6 +42,7 @@ jobs:
         working-directory: ./frontend
         env:
           VITE_API_URL: ${{ vars.VITE_API_URL }}
+          VITE_API_KEY: ${{ secrets.VITE_API_KEY }}
         run: npm run build
 
       - name: Setup Pages
