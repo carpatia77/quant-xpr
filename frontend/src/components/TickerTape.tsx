@@ -1,4 +1,4 @@
-import { TrendingUp, TrendingDown, Minus, X } from "lucide-react";
+import { TrendingUp, TrendingDown, Activity, X } from "lucide-react";
 
 export interface TickerData {
   ticker: string;
@@ -71,7 +71,7 @@ export default function TickerTape({ items, onRemove, onClickTicker }: TickerTap
 
               <span className="text-muted-foreground/30 mx-1">|</span>
 
-              {item.signal && item.signal !== "WAITING_DATA" && !item.signal.startsWith("error") ? (
+              {item.signal && item.signal.toLowerCase() !== "waiting_data" && !item.signal.toLowerCase().startsWith("error") ? (
                 <>
                   <Icon size={14} className={signalColor} />
                   <span className={`text-xs font-bold ${signalColor}`}>
