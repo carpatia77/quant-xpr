@@ -6,3 +6,5 @@ dist-ssr
 .env.*
 !.env.example
 .DS_Store
+vite.config.js
+vite.config.d.ts
