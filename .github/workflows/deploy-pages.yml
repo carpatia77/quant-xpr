@@ -41,8 +41,8 @@ jobs:
       - name: Build
         working-directory: ./frontend
         env:
-          VITE_API_URL: ${{ vars.VITE_API_URL }}
-          VITE_API_KEY: ${{ secrets.VITE_API_KEY }}
+          VITE_API_URL: ${{ vars.VITE_API_URL || 'https://quant-xpr-production.up.railway.app' }}
+          VITE_API_KEY: ${{ secrets.VITE_API_KEY || 'quant-secret-key' }}
         run: npm run build
 
       - name: Setup Pages
