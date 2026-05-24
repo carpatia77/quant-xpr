@@ -64,13 +64,22 @@ export default function TickerTape({ items, onRemove, onClickTicker }: TickerTap
 
               <span className="text-muted-foreground/30 mx-1">|</span>
 
-              <Icon size={14} className={signalColor} />
-              <span className={`text-xs font-bold ${signalColor}`}>
-                {item.signal.replace(/_/g, " ")}
-              </span>
-              <span className="text-xs text-accent tracking-widest ml-1">
-                IV: {(item.iv_atm * 100).toFixed(1)}%
-              </span>
+              {item.signal && item.signal !== "WAITING_DATA" && !item.signal.startsWith("error") ? (
+                <>
+                  <Icon size={14} className={signalColor} />
+                  <span className={`text-xs font-bold ${signalColor}`}>
+                    {item.signal.replace(/_/g, " ")}
+                  </span>
+                  <span className="text-xs text-accent tracking-widest ml-1">
+                    IV: {(item.iv_atm * 100).toFixed(1)}%
+                  </span>
+                </>
+              ) : (
+                <span className="text-xs text-muted-foreground italic">
+                  Awaiting Analytics...
+                </span>
+              )}
+
               {onRemove && (
                 <button 
                   onClick={() => onRemove(item.ticker)}
