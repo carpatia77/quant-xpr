@@ -54,9 +54,9 @@ def _get_vol_surface_impl(ticker_symbol: str, risk_free_rate: float = 0.0, df: p
             logger.warning("vol_surface_skew_nan", ticker=ticker_symbol, msg="Illiquid OTM options caused NaN skew, falling back to 0.0")
             skew = 0.0
         
-        # Calculate Volatility Term Structure for up to 3 expirations
+        # Calculate Volatility Term Structure for up to 1 expiration (temporary until OpLab integration)
         vol_term_structure = []
-        for exp in expirations[:3]:
+        for exp in expirations[:1]:
             try:
                 term_chain = tk.option_chain(exp)
                 term_calls = term_chain.calls
@@ -99,16 +99,31 @@ def _get_vol_surface_impl(ticker_symbol: str, risk_free_rate: float = 0.0, df: p
     except Exception as e:
         return {"error": str(e)}
 
+import time
+
+_vol_cache: dict = {}
+_VOL_CACHE_TTL = 300  # 5 minutos
+
 def get_vol_surface(ticker_symbol: str, risk_free_rate: float = 0.0, df: pd.DataFrame = None):
-    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-        future = executor.submit(_get_vol_surface_impl, ticker_symbol, risk_free_rate, df)
-        try:
-            return future.result(timeout=8.0)
-        except concurrent.futures.TimeoutError:
-            import structlog
-            logger = structlog.get_logger(__name__)
-            logger.warning("vol_surface_timeout", ticker=ticker_symbol, msg="yfinance options fetching timed out after 8s")
-            return {"error": "timeout"}
+    cache_key = f"{ticker_symbol}:{round(risk_free_rate, 4)}"
+    cached = _vol_cache.get(cache_key)
+    if cached and (time.time() - cached["ts"]) < _VOL_CACHE_TTL:
+        return cached["data"]
+    
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+    future = executor.submit(_get_vol_surface_impl, ticker_symbol, risk_free_rate, df)
+    try:
+        result = future.result(timeout=8.0)
+        if "error" not in result:
+            _vol_cache[cache_key] = {"data": result, "ts": time.time()}
+        return result
+    except concurrent.futures.TimeoutError:
+        import structlog
+        logger = structlog.get_logger(__name__)
+        logger.warning("vol_surface_timeout", ticker=ticker_symbol, msg="yfinance options timed out after 8s — returning degraded response")
+        return {"error": "timeout"}
+    finally:
+        executor.shutdown(wait=False)
 
 def main():
     parser = argparse.ArgumentParser()
