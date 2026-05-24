@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { createChart, ColorType, CrosshairMode } from 'lightweight-charts';
+import { createChart, ColorType, CrosshairMode, AreaSeries } from 'lightweight-charts';
 
 interface Q3HistoryProps {
   data: any;
@@ -34,7 +34,7 @@ export default function Q3History({ data }: Q3HistoryProps) {
       },
     });
 
-    const areaSeries = chart.addAreaSeries({
+    const areaSeries = chart.addSeries(AreaSeries, {
       lineColor: '#00d4aa',
       topColor: 'rgba(0, 212, 170, 0.4)',
       bottomColor: 'rgba(0, 212, 170, 0.0)',
