@@ -8,14 +8,16 @@ from app.core.rate_limit import limiter
 
 router = APIRouter()
 
+from typing import Optional
+
 @router.get("/summary/{ticker}")
 @limiter.limit("10/minute")
-async def get_summary(request: Request, ticker: str, db: Session = Depends(get_db)):
+async def get_summary(request: Request, ticker: str, rfr: Optional[float] = None, db: Session = Depends(get_db)):
     try:
         # Offload blocking computation to a separate thread to unblock the event loop
         # and enforce a maximum execution time of 15 seconds
         result_dict = await asyncio.wait_for(
-            asyncio.to_thread(run_cross_analysis, ticker), 
+            asyncio.to_thread(run_cross_analysis, ticker, rfr), 
             timeout=55.0
         )
     except asyncio.TimeoutError:

@@ -28,11 +28,17 @@ function App() {
     return params.get('ticker') || 'PETR4.SA'
   })
 
-  const fetchSummary = async (ticker: string) => {
+  const [customRfr, setCustomRfr] = useState<number | null>(null)
+
+  const fetchSummary = async (ticker: string, rfrOverride: number | null = null) => {
     setLoading(true)
     setErrorMsg(null)
     try {
-      const res = await fetch(`${API_BASE}/v1/summary/${ticker}`, {
+      let url = `${API_BASE}/v1/summary/${ticker}`
+      if (rfrOverride !== null) {
+        url += `?rfr=${rfrOverride / 100}` // frontend uses %, backend uses decimal
+      }
+      const res = await fetch(url, {
         headers: { 'X-API-Key': API_KEY }
       })
       if (res.ok) {
@@ -60,8 +66,8 @@ function App() {
     const params = new URLSearchParams(window.location.search)
     params.set('ticker', selectedTicker)
     window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`)
-    fetchSummary(selectedTicker)
-  }, [selectedTicker])
+    fetchSummary(selectedTicker, customRfr)
+  }, [selectedTicker, customRfr])
 
   const fetchWatchlist = async () => {
     try {
@@ -178,7 +184,7 @@ function App() {
           
           {/* Q1: Signal & Probabilities */}
           <div className="bg-panel border border-border p-4 overflow-hidden">
-            <Q1Signal data={data} />
+            <Q1Signal data={data} onOverrideRfr={(val) => setCustomRfr(val)} />
           </div>
           
           {/* Q2: Volatility Smile */}

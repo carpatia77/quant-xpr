@@ -5,11 +5,14 @@ from app.services.risk_free_rate import get_selic_anual
 from app.services.hg_brasil import fetch_stock_quote
 from app.core.config import settings
 
-def run_cross_analysis(ticker: str):
+def run_cross_analysis(ticker: str, custom_rfr: float = None):
     # Fetch risk free rate first
     risk_free_rate = 0.0
     risk_free_rate_source = "Zero (International Asset)"
-    if ticker.endswith(".SA"):
+    if custom_rfr is not None:
+        risk_free_rate = custom_rfr
+        risk_free_rate_source = "Custom Override"
+    elif ticker.endswith(".SA"):
         risk_free_rate = get_selic_anual()
         risk_free_rate_source = "BCB SGS 11 (Selic Over)"
 

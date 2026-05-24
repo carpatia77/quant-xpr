@@ -1,13 +1,26 @@
-import { TrendingUp, TrendingDown, Activity } from "lucide-react";
+import { TrendingUp, TrendingDown, Activity, Edit2, Check, X } from "lucide-react";
+import { useState } from "react";
 
 interface Q1SignalProps {
   data: any;
+  onOverrideRfr?: (val: number | null) => void;
 }
 
-export default function Q1Signal({ data }: Q1SignalProps) {
+export default function Q1Signal({ data, onOverrideRfr }: Q1SignalProps) {
+  const [isEditingRfr, setIsEditingRfr] = useState(false);
+  const [rfrInput, setRfrInput] = useState("");
+
   if (!data) return <div className="h-full flex items-center justify-center text-muted-foreground animate-pulse">Awaiting Data...</div>;
 
   const isBull = data.signal === "RISK_REVERSAL" || data.signal === "long_vol";
+
+  const handleRfrSubmit = () => {
+    const val = parseFloat(rfrInput);
+    if (!isNaN(val) && onOverrideRfr) {
+      onOverrideRfr(val);
+    }
+    setIsEditingRfr(false);
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -29,8 +42,29 @@ export default function Q1Signal({ data }: Q1SignalProps) {
         </div>
         
         {data.risk_free_rate_source && (
-          <div className="text-xs bg-amber-500/20 text-amber-500 border border-amber-500/50 px-3 py-1 rounded font-bold tracking-widest flex items-center gap-2">
-            {data.risk_free_rate_source.toUpperCase().split(' (')[0]} {(data.risk_free_rate * 100).toFixed(2)}%
+          <div className="text-xs bg-amber-500/20 text-amber-500 border border-amber-500/50 px-3 py-1 rounded font-bold tracking-widest flex items-center gap-2 group cursor-pointer transition-colors hover:bg-amber-500/30">
+            {isEditingRfr ? (
+              <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                <input 
+                  type="number" 
+                  step="0.01"
+                  autoFocus
+                  placeholder="ex: 10.5"
+                  className="bg-background text-foreground border border-amber-500/50 w-20 px-1 py-0.5 outline-none"
+                  value={rfrInput}
+                  onChange={(e) => setRfrInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleRfrSubmit()}
+                />
+                <span className="text-[10px]">%</span>
+                <button onClick={handleRfrSubmit} className="hover:text-amber-300 ml-1"><Check size={14} /></button>
+                <button onClick={() => { setIsEditingRfr(false); if(onOverrideRfr) onOverrideRfr(null); }} className="hover:text-bear"><X size={14} /></button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2" onClick={() => { setIsEditingRfr(true); setRfrInput((data.risk_free_rate * 100).toFixed(2)); }}>
+                {data.risk_free_rate_source.toUpperCase().split(' (')[0]} {(data.risk_free_rate * 100).toFixed(2)}%
+                <Edit2 size={12} className="opacity-0 group-hover:opacity-100" />
+              </div>
+            )}
           </div>
         )}
       </div>
