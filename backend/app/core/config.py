@@ -4,6 +4,7 @@ class Settings(BaseSettings):
     API_KEY: str = "quant-secret-key"
     DATABASE_URL: str = "sqlite:///./quantdb.sqlite"
     API_V1_STR: str = "/v1"
+    HG_BRASIL_API_KEY: str = ""
     
     # Strategy Parameters
     BULL_THRESHOLD: float = 0.5

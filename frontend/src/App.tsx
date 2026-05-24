@@ -125,8 +125,23 @@ function App() {
         <header className="flex items-center justify-between border-b border-border pb-2 mb-2 shrink-0">
         <div className="flex items-center gap-4">
           <h1 className="text-xl font-bold text-accent tracking-widest px-2">QUANT_XPR</h1>
-          <span className="text-xs bg-panel px-2 py-1 border border-border text-muted-foreground font-bold tracking-widest">
-            {data ? data.ticker : "LOADING"}
+          <span className="text-xs bg-panel px-2 py-1 border border-border text-muted-foreground font-bold tracking-widest flex items-center gap-2">
+            {data ? (
+              <>
+                <span>{data.ticker}</span>
+                {data.company_name && data.company_name !== data.ticker && (
+                  <span className="text-foreground/50">| {data.company_name.substring(0, 20)}</span>
+                )}
+                {data.spot_price > 0 && (
+                  <span className="text-foreground">| R$ {data.spot_price.toFixed(2)}</span>
+                )}
+                {data.change_percent !== undefined && data.change_percent !== 0 && (
+                  <span className={data.change_percent >= 0 ? "text-bull" : "text-bear"}>
+                    {data.change_percent >= 0 ? "+" : ""}{data.change_percent.toFixed(2)}%
+                  </span>
+                )}
+              </>
+            ) : "LOADING"}
           </span>
           <form onSubmit={handleAddTicker} className="flex items-center ml-4">
             <input 

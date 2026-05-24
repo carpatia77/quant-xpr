@@ -2,6 +2,7 @@ from app.engines.markov_hedge_fund_method.regime import label_regimes, build_tra
 from app.engines.run_vol import get_vol_surface
 from app.services.data_fetcher import fetch_ticker_data
 from app.services.risk_free_rate import get_selic_anual
+from app.services.hg_brasil import fetch_stock_quote
 from app.core.config import settings
 
 def run_cross_analysis(ticker: str):
@@ -79,8 +80,15 @@ def run_cross_analysis(ticker: str):
     else:
         signal = "error_fetching_data"
         
+    # Fetch broad data from HG Brasil
+    broad_data = fetch_stock_quote(ticker)
+        
     return {
         "ticker": ticker,
+        "company_name": broad_data.get("company_name", ticker),
+        "spot_price": broad_data.get("price", df["Close"].iloc[-1] if df is not None and not df.empty else 0.0),
+        "change_percent": broad_data.get("change_percent", 0.0),
+        "market_cap": broad_data.get("market_cap", 0.0),
         "markov_bull_prob": round(markov_bull_prob, 4),
         "markov_bear_prob": round(markov_bear_prob, 4),
         "iv_atm": round(iv_atm, 4),
