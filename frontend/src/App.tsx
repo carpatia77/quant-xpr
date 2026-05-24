@@ -5,7 +5,10 @@ import Q3History from './components/Q3History'
 import Q4Table from './components/Q4Table'
 import TickerTape, { TickerData } from './components/TickerTape'
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+let API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+if (API_BASE.endsWith('/')) {
+  API_BASE = API_BASE.slice(0, -1);
+}
 const API_KEY = import.meta.env.VITE_API_KEY || 'quant-secret-key';
 
 
