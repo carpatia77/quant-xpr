@@ -6,6 +6,7 @@ import Q4Table from './components/Q4Table'
 import TickerTape, { TickerData } from './components/TickerTape'
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_KEY = import.meta.env.VITE_API_KEY || 'quant-secret-key';
 
 
 
@@ -23,7 +24,7 @@ function App() {
     setLoading(true)
     try {
       const res = await fetch(`${API_BASE}/v1/summary/${ticker}`, {
-        headers: { 'X-API-Key': 'quant-secret-key' }
+        headers: { 'X-API-Key': API_KEY }
       })
       if (res.ok) {
         const json = await res.json()
@@ -31,7 +32,7 @@ function App() {
       }
       
       const historyRes = await fetch(`${API_BASE}/v1/history/${ticker}?limit=10`, {
-        headers: { 'X-API-Key': 'quant-secret-key' }
+        headers: { 'X-API-Key': API_KEY }
       })
       if (historyRes.ok) {
         const historyJson = await historyRes.json()
@@ -53,7 +54,7 @@ function App() {
   const fetchWatchlist = async () => {
     try {
       const res = await fetch(`${API_BASE}/v1/watchlist/summary`, {
-        headers: { 'X-API-Key': 'quant-secret-key' }
+        headers: { 'X-API-Key': API_KEY }
       })
       if (res.ok) {
         const json = await res.json()
@@ -73,7 +74,7 @@ function App() {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'X-API-Key': 'quant-secret-key'
+          'X-API-Key': API_KEY
         },
         body: JSON.stringify({ ticker: newTicker.trim().toUpperCase() })
       })
@@ -89,7 +90,7 @@ function App() {
     try {
       await fetch(`${API_BASE}/v1/watchlist/${ticker}`, {
         method: 'DELETE',
-        headers: { 'X-API-Key': 'quant-secret-key' }
+        headers: { 'X-API-Key': API_KEY }
       })
       await fetchWatchlist()
     } catch (e) {
