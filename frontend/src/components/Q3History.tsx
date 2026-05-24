@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { createChart, ColorType, CrosshairMode, AreaSeries } from 'lightweight-charts';
+import { createChart, ColorType, CrosshairMode, AreaSeries, createSeriesMarkers } from 'lightweight-charts';
 
 interface Q3HistoryProps {
   data: any;
@@ -59,7 +59,7 @@ export default function Q3History({ data }: Q3HistoryProps) {
         }
       }
     });
-    areaSeries.setMarkers(markers);
+    createSeriesMarkers(areaSeries, markers);
 
     // Fit content
     chart.timeScale().fitContent();
