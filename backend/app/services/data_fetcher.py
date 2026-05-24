@@ -2,12 +2,11 @@
 data_fetcher.py
 ---------------
 Fonte única de dados históricos OHLCV: Brapi (brapi.dev).
-O yfinance foi removido desta camada. O motor de volatilidade (run_vol.py)
-continua usando yfinance apenas para a cadeia de opções, que a Brapi não fornece.
+O yfinance foi removido desta camada.
 
 Endpoint utilizado:
   GET https://brapi.dev/api/quote/{ticker}
-  Parâmetros: range=10y, interval=1d, token=<BRAPI_TOKEN>
+  Parâmetros: range=1y, interval=1d, token=<BRAPI_TOKEN>
 
 Retorno: pd.DataFrame com colunas Open, High, Low, Close, Volume
          indexado por DatetimeIndex UTC.
@@ -18,7 +17,7 @@ import pandas as pd
 from app.core.config import settings
 
 BRAPI_BASE = "https://brapi.dev/api"
-_TIMEOUT = 12  # segundos
+_TIMEOUT = 12
 
 
 def _brapi_ticker(ticker: str) -> str:
@@ -29,11 +28,12 @@ def _brapi_ticker(ticker: str) -> str:
 def fetch_ticker_data(ticker: str, years: int = 10) -> pd.DataFrame:
     """
     Busca histórico OHLCV via Brapi.
-    Tenta range=10y primeiro; em caso de falha tenta range=5y.
+    Free tier suporta até range=1y. Fallback para 3mo.
     Lança RuntimeError se ambas as tentativas falharem.
     """
     clean = _brapi_ticker(ticker)
-    ranges = ["10y", "5y"] if years >= 5 else ["1y"]
+    # Free tier da Brapi: máximo 1y de histórico
+    ranges = ["1y", "3mo"]
 
     last_error = None
     for rng in ranges:
@@ -58,11 +58,9 @@ def fetch_ticker_data(ticker: str, years: int = 10) -> pd.DataFrame:
                 raise ValueError(f"Brapi sem historicalDataPrice para {clean} range={rng}")
 
             df = pd.DataFrame(historical)
-            # Brapi retorna epoch em segundos na coluna 'date'
             df["date"] = pd.to_datetime(df["date"], unit="s", utc=True)
             df = df.set_index("date").sort_index()
 
-            # Padroniza nomes de colunas para Open/High/Low/Close/Volume
             rename_map = {
                 "open": "Open",
                 "high": "High",
@@ -85,5 +83,5 @@ def fetch_ticker_data(ticker: str, years: int = 10) -> pd.DataFrame:
             time.sleep(1)
 
     raise RuntimeError(
-        f"Brapi falhou para {ticker} após todas as tentativas. Último erro: {last_error}"
+        f"Brapi falhou para {ticker}. Último erro: {last_error}"
     )
