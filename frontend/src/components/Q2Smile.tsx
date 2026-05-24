@@ -12,7 +12,7 @@ export default function Q2Smile({ data }: Q2SmileProps) {
   // Pre-process smile data for Recharts
   const chartData = data.smile_data.map((d: any) => ({
     strike: d.strike,
-    iv: d.impliedVolatility * 100,
+    iv: (d.iv !== undefined ? d.iv : d.impliedVolatility) * 100,
   }));
 
   // Find ATM strike approximately for a reference line

@@ -1,0 +1,2 @@
+Ticker,Tipo,Strike,A/I/OTM,Dist. (%) do Strike,Vol. Impl. (%),Ultimo,Delta,Gamma,Theta ($),Theta (%),Vega,Data/Hora  
+PETR4,CALL,3000,OTM,-500,351,267,6757,100,50,1,1000,20/05/2026 
