@@ -7,21 +7,21 @@ from slowapi.errors import RateLimitExceeded
 import time
 
 from app.api.v1 import endpoints
+from app.api.v1 import upload
 from app.core.config import settings
 from app.core.logger import logger
 from app.core.rate_limit import limiter
 
-app = FastAPI(title="Quant Engine API", version="1.0.0")
+app = FastAPI(title="Quant Engine API", version="1.1.0")
 
-# Register Limiter
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173", 
-        "http://localhost:3000", 
+        "http://localhost:5173",
+        "http://localhost:3000",
         "https://carpatia77.github.io"
     ],
     allow_credentials=True,
@@ -34,7 +34,6 @@ async def log_requests(request: Request, call_next):
     start_time = time.time()
     response = await call_next(request)
     process_time = (time.time() - start_time) * 1000
-    
     logger.info(
         "request_completed",
         method=request.method,
@@ -52,8 +51,20 @@ def get_api_key(api_key_header: str = Security(api_key_header)):
         return api_key_header
     raise HTTPException(status_code=403, detail="Could not validate API KEY")
 
-app.include_router(endpoints.router, prefix=settings.API_V1_STR, dependencies=[Depends(get_api_key)])
+# Análise e histórico (autenticados)
+app.include_router(
+    endpoints.router,
+    prefix=settings.API_V1_STR,
+    dependencies=[Depends(get_api_key)]
+)
+
+# Upload manual de dados (autenticado)
+app.include_router(
+    upload.router,
+    prefix=settings.API_V1_STR,
+    dependencies=[Depends(get_api_key)]
+)
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok"}
+    return {"status": "ok", "version": "1.1.0"}
