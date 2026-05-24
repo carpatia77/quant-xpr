@@ -93,11 +93,15 @@ async def get_watchlist_summary(request: Request, db: Session = Depends(get_db))
     Returns the latest AnalysisResult for each ticker in the watchlist.
     Useful for the frontend TickerTape.
     """
-    watchlist_tickers = [item.ticker for item in db.query(WatchlistItem).order_by(WatchlistItem.added_at.asc()).all()]
-    if not watchlist_tickers:
-        # Default to the most traded assets on B3 if the watchlist is completely empty
-        watchlist_tickers = ["PETR4.SA", "VALE3.SA", "ITUB4.SA", "BBDC4.SA", "BBAS3.SA", "B3SA3.SA", "ABEV3.SA", "WEGE3.SA", "ELET3.SA", "RENT3.SA"]
-        
+    db_tickers = [item.ticker for item in db.query(WatchlistItem).order_by(WatchlistItem.added_at.asc()).all()]
+    
+    default_tickers = ["PETR4.SA", "VALE3.SA", "ITUB4.SA", "BBDC4.SA", "BBAS3.SA", "B3SA3.SA", "ABEV3.SA", "WEGE3.SA", "ELET3.SA", "RENT3.SA"]
+    
+    # Always include the user's watchlist first, then pad with top B3 assets if they aren't already there
+    watchlist_tickers = list(db_tickers)
+    for dt in default_tickers:
+        if dt not in watchlist_tickers:
+            watchlist_tickers.append(dt)
     # Fetch real-time broad data for all tickers at once from HG Brasil
     real_time_data = fetch_multiple_stock_quotes(watchlist_tickers)
         

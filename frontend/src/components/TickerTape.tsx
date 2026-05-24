@@ -21,8 +21,14 @@ export default function TickerTape({ items, onRemove, onClickTicker }: TickerTap
     </div>
   );
 
-  // Duplicate items to create a seamless infinite scroll effect
-  const repeatedItems = [...items, ...items, ...items, ...items];
+  // Pad items so the marquee always has enough content to overflow the screen
+  let baseItems = [...items];
+  while (baseItems.length < 15) {
+    baseItems = [...baseItems, ...items];
+  }
+  
+  // Duplicate the padded items once to create the seamless -50% translation loop
+  const repeatedItems = [...baseItems, ...baseItems];
 
   return (
     <div className="w-full bg-[#0A0E17] border-b border-border overflow-hidden py-1.5 flex items-center shrink-0">
