@@ -1,4 +1,4 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     API_KEY: str = "quant-secret-key"
@@ -10,7 +10,6 @@ class Settings(BaseSettings):
     IV_MAX_CHEAP: float = 0.35
     SKEW_MIN_REVERSAL: float = 0.02
 
-    class Config:
-        env_file = ".env"
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
 settings = Settings()
