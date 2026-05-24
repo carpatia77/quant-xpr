@@ -16,7 +16,7 @@ def run_cross_analysis(ticker: str, custom_rfr: float = None, brapi_token: str =
         risk_free_rate_source = "Custom Override"
     elif ticker.endswith(".SA"):
         risk_free_rate = get_selic_anual()
-        risk_free_rate_source = "BCB SGS 11 (Selic Over)"
+        risk_free_rate_source = "Taxa Selic"
 
     # --- Historical OHLCV via Brapi ---
     df = None
