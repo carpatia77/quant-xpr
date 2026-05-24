@@ -23,10 +23,16 @@ export default function Q1Signal({ data }: Q1SignalProps) {
         <div className={`text-sm tracking-widest font-bold px-3 py-1 mb-2 ${isBull ? 'bg-bull/20 text-bull' : 'bg-bear/20 text-bear'}`}>
           CURRENT BIAS
         </div>
-        <div className={`text-4xl font-bold ${isBull ? 'text-bull' : 'text-bear'} flex items-center gap-3`}>
+        <div className={`text-4xl font-bold ${isBull ? 'text-bull' : 'text-bear'} flex items-center gap-3 mb-3`}>
           {isBull ? <TrendingUp size={40} /> : <TrendingDown size={40} />}
           {data.signal.replace(/_/g, " ")}
         </div>
+        
+        {data.risk_free_rate_source && (
+          <div className="text-xs bg-amber-500/20 text-amber-500 border border-amber-500/50 px-3 py-1 rounded font-bold tracking-widest flex items-center gap-2">
+            {data.risk_free_rate_source.toUpperCase().split(' (')[0]} {(data.risk_free_rate * 100).toFixed(2)}%
+          </div>
+        )}
       </div>
 
       {/* Markov Probabilities */}
