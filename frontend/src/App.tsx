@@ -17,7 +17,6 @@ type Tab = 'dashboard' | 'datasources'
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard')
   const [data, setData] = useState<any>(null)
-  const [history, setHistory] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
@@ -59,11 +58,6 @@ function App() {
       } else {
         setErrorMsg(`API Error: ${res.status} ${res.statusText}`)
       }
-      const histRes = await fetch(`${API_BASE}/v1/history/${ticker}?limit=10`, {
-        headers: customHeaders,
-        signal: controller.signal,
-      })
-      if (histRes.ok) setHistory(await histRes.json())
     } catch (e: any) {
       if (e.name === 'AbortError') return
       setErrorMsg(e.message || 'Network connection failed')
