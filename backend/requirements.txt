@@ -6,6 +6,7 @@ yfinance==0.2.52
 pandas==2.2.3
 numpy==2.4.6
 scikit-learn==1.8.0
+scipy>=1.10.0
 hmmlearn==0.3.3
 pydantic-settings==2.7.1
 alembic==1.14.0

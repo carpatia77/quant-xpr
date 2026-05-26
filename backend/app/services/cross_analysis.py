@@ -1,6 +1,7 @@
 import structlog
 from app.engines.markov_hedge_fund_method.regime import label_regimes, build_transition_matrix, stationary_distribution
 from app.engines.run_vol import get_vol_surface
+from app.engines.vol_premium import analyze_premium
 from app.services.data_fetcher import fetch_ticker_data, fetch_quote
 from app.services.risk_free_rate import get_selic_anual
 from app.core.config import settings
@@ -89,6 +90,9 @@ def run_cross_analysis(ticker: str, custom_rfr: float = None, brapi_token: str =
     quote = fetch_quote(ticker, brapi_token=brapi_token)
     spot_price = quote.get("price") or (float(df["Close"].iloc[-1]) if df is not None and not df.empty else 0.0)
 
+    # --- Volatility Premium Engine (Term Structure & RV vs IV) ---
+    vol_premium = analyze_premium(ticker, df)
+
     return {
         "ticker": ticker,
         "company_name": quote.get("company_name", ticker),
@@ -106,4 +110,5 @@ def run_cross_analysis(ticker: str, custom_rfr: float = None, brapi_token: str =
         "regime_history": regime_history,
         "risk_free_rate": round(risk_free_rate, 6),
         "risk_free_rate_source": risk_free_rate_source,
+        "vol_premium": vol_premium,
     }

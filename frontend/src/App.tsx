@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import Q1Signal from './components/Q1Signal'
 import Q2Smile from './components/Q2Smile'
 import Q3History from './components/Q3History'
-import Q4Table from './components/Q4Table'
+import { Q4VolPremium } from './components/Q4VolPremium'
 import TickerTape, { TickerData } from './components/TickerTape'
 import DataSources from './components/DataSources'
 
@@ -246,7 +246,7 @@ function App() {
               <Q3History data={data} />
             </div>
             <div className="bg-panel border border-border p-4 overflow-hidden flex flex-col">
-              <Q4Table historyData={history} />
+              <Q4VolPremium data={data} loading={loading} error={errorMsg} />
             </div>
           </div>
         )}
